@@ -33,15 +33,23 @@ export const getRooms = () => API.get('/room/all').then(dataFrom);
 export const createRoom = (room) => API.post('/room/create', room).then(dataFrom);
 export const getRoom = (roomId) => API.get(`/room/${roomId}`).then(dataFrom);
 export const getMessages = () => API.get('/message').then(dataFrom);
-export const getProfile = () =>
-  API.get('/auth/me', { timeout: PROFILE_REQUEST_TIMEOUT_MS }).then(({ data }) => {
-    const profile = data?.user || data?.profile || data;
-    if (!profile || typeof profile !== 'object' || Array.isArray(profile) ||
-        typeof profile.username !== 'string' || typeof profile.profileComplete !== 'boolean') {
-      throw new Error('The server returned an invalid profile. Please try again.');
-    }
-    return profile;
-  });
+function profileFrom(response) {
+  const profile = response.data?.user || response.data?.profile || response.data;
+  if (!profile || typeof profile !== 'object' || Array.isArray(profile) ||
+      typeof profile.username !== 'string' || typeof profile.profileComplete !== 'boolean') {
+    throw new Error('The server returned an invalid profile. Please try again.');
+  }
+  return profile;
+}
+
+export const getProfile = async () => {
+  try {
+    return profileFrom(await API.get('/auth/me', { timeout: PROFILE_REQUEST_TIMEOUT_MS }));
+  } catch (error) {
+    if (error.response?.status !== 404) throw error;
+    return profileFrom(await API.get('/users/profile', { timeout: PROFILE_REQUEST_TIMEOUT_MS }));
+  }
+};
 export const getTheme = () => API.get('/user/theme').then(dataFrom);
 export const updateTheme = (theme) => API.put('/user/theme', theme).then(dataFrom);
 export const generateInvite = () => API.post('/invite/generate').then(dataFrom);
