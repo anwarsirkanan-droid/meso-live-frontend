@@ -2,8 +2,8 @@ import { NavLink, useLocation } from 'react-router-dom';
 
 const tabs = [
   { to: '/', label: 'Home', icon: '🏠', end: true },
-  { to: '/messages', label: 'Messages', icon: '💬' },
-  { to: '/profile', label: 'Me', icon: '👤' },
+  { to: '/messages', label: 'Chat', icon: '💬' },
+  { to: '/profile', label: 'Profile', icon: '👤' },
 ];
 
 export default function BottomNav() {
