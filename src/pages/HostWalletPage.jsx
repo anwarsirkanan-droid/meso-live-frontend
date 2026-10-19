@@ -1,18 +1,22 @@
 import { useEffect, useState } from 'react';
-import { getWalletBalance, requestWithdraw } from '../api.js';
+import { getWalletBalance, getWithdrawalHistory, requestWithdraw } from '../api.js';
 import { Card, ErrorMessage, Field, Loading, Page } from '../components/UI.jsx';
 
 export default function HostWalletPage() {
   const [wallet, setWallet] = useState(null);
   const [amount, setAmount] = useState('');
-  const [method, setMethod] = useState('Bank transfer');
+  const [method, setMethod] = useState('CBE');
   const [account, setAccount] = useState('');
+  const [history, setHistory] = useState([]);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
-  const refresh = () => getWalletBalance()
-    .then((data) => setWallet(data?.wallet || data))
+  const refresh = () => Promise.all([getWalletBalance(), getWithdrawalHistory()])
+    .then(([walletData, withdrawalData]) => {
+      setWallet(walletData?.wallet || walletData);
+      setHistory(Array.isArray(withdrawalData) ? withdrawalData : []);
+    })
     .catch((requestError) => setError(requestError.response?.data?.message || requestError.message));
 
   useEffect(() => { refresh(); }, []);
@@ -23,7 +27,11 @@ export default function HostWalletPage() {
     setMessage('');
     setError('');
     try {
-      await requestWithdraw({ amount: Number(amount), method, account });
+      await requestWithdraw({
+        amountDiamonds: Number(amount),
+        method,
+        accountDetails: account,
+      });
       setMessage('Withdrawal request submitted.');
       setAmount('');
       setAccount('');
@@ -43,15 +51,24 @@ export default function HostWalletPage() {
       </Card>
       <Card title="Request a withdrawal">
         <form className="form-stack" onSubmit={submit}>
-          <Field label="Amount" type="number" min="1" required value={amount} onChange={(event) => setAmount(event.target.value)} />
-          <label className="field"><span>Withdrawal method</span><select value={method} onChange={(event) => setMethod(event.target.value)}><option>Bank transfer</option><option>Telebirr</option></select></label>
+          <Field label="Amount (minimum 1,000,000 diamonds / $10)" type="number" min="1000000" step="1" required value={amount} onChange={(event) => setAmount(event.target.value)} />
+          <label className="field"><span>Withdrawal method</span><select value={method} onChange={(event) => setMethod(event.target.value)}><option value="CBE">CBE</option><option value="TELEBIRR">Telebirr</option><option value="CRYPTO">Crypto</option></select></label>
           <Field label="Account or phone number" required value={account} onChange={(event) => setAccount(event.target.value)} />
           <ErrorMessage>{error}</ErrorMessage>
           {message && <p className="success-message" role="status">{message}</p>}
           <button className="button button-primary button-full" disabled={busy}>{busy ? 'Submitting…' : 'Request withdrawal'}</button>
         </form>
       </Card>
-      <Card title="Withdrawal history"><p className="muted">Your requests will appear here.</p></Card>
+      <Card title="Withdrawal history">
+        {history.length
+          ? history.map((withdrawal) => (
+            <div className="setting-row" key={withdrawal._id}>
+              <span>{withdrawal.amountDiamonds.toLocaleString()} diamonds · {withdrawal.method}</span>
+              <strong>{withdrawal.status}</strong>
+            </div>
+          ))
+          : <p className="muted">No withdrawal requests yet.</p>}
+      </Card>
     </Page>
   );
 }

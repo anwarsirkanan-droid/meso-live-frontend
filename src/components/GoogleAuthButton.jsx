@@ -17,7 +17,7 @@ export default function GoogleAuthButton({ onSuccess, onError, onLoading }) {
     try {
       const data = await googleLogin(credential);
       saveSession(data);
-      onSuccess();
+      onSuccess(data);
     } catch (error) {
       onError(error.response?.data?.message || error.response?.data?.error || error.message);
     } finally {

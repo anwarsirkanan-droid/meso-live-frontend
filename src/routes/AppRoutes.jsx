@@ -13,23 +13,19 @@ import LiveRoomPage from '../pages/LiveRoomPage.jsx';
 import Login from '../pages/Login.jsx';
 import MessagesPage from '../pages/MessagesPage.jsx';
 import ProfilePage from '../pages/ProfilePage.jsx';
+import ProfileSetup from '../pages/ProfileSetup.jsx';
 import RechargePage from '../pages/RechargePage.jsx';
 import Register from '../pages/Register.jsx';
 import SettingsPage from '../pages/SettingsPage.jsx';
 
-function ProtectedRoute({ adminOnly = false }) {
+function ProtectedRoute({ adminOnly = false, allowIncomplete = false }) {
   const location = useLocation();
   const token = localStorage.getItem('token');
-  const [access, setAccess] = useState({ status: adminOnly ? 'loading' : 'allowed' });
+  const [access, setAccess] = useState({ status: 'loading' });
 
   useEffect(() => {
     if (!token) {
       setAccess({ status: 'denied' });
-      return;
-    }
-
-    if (!adminOnly) {
-      setAccess({ status: 'allowed' });
       return;
     }
 
@@ -38,9 +34,7 @@ function ProtectedRoute({ adminOnly = false }) {
       .then((data) => {
         const profile = data?.user || data;
         if (active) {
-          setAccess({
-            status: profile?.role === 'admin' || profile?.isAdmin === true ? 'allowed' : 'denied',
-          });
+          setAccess({ status: 'loaded', profile });
         }
       })
       .catch((error) => {
@@ -52,21 +46,25 @@ function ProtectedRoute({ adminOnly = false }) {
     return () => {
       active = false;
     };
-  }, [adminOnly, token]);
+  }, [token]);
 
   if (!token) return <Navigate to="/login" replace state={{ from: location }} />;
-  if (access.status === 'denied') {
-    return <Navigate to={adminOnly ? '/' : '/login'} replace state={{ from: location }} />;
-  }
   if (access.status === 'loading') {
-    return <main className="page"><p className="muted">Checking administrator access…</p></main>;
+    return <main className="page"><p className="muted">Loading your profile…</p></main>;
   }
   if (access.status === 'error') {
     return (
       <main className="page">
-        <div className="notice notice-error">Could not verify administrator access: {access.message}</div>
+        <div className="notice notice-error">Could not load your profile: {access.message}</div>
       </main>
     );
+  }
+
+  const profile = access.profile;
+  if (allowIncomplete && profile?.profileComplete) return <Navigate to="/" replace />;
+  if (!allowIncomplete && !profile?.profileComplete) return <Navigate to="/profile-setup" replace />;
+  if (adminOnly && profile?.role !== 'ADMIN' && profile?.isAdmin !== true) {
+    return <Navigate to="/" replace />;
   }
 
   return <Outlet />;
@@ -87,6 +85,9 @@ export default function AppRoutes() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route element={<ProtectedRoute allowIncomplete />}>
+        <Route path="/profile-setup" element={<ProfileSetup />} />
+      </Route>
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />

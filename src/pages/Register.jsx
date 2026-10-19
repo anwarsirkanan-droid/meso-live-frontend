@@ -31,7 +31,7 @@ export default function Register() {
           throw new Error('Registration succeeded but the server did not return an authentication token.');
         }
       }
-      navigate('/', { replace: true });
+      navigate(result?.user?.profileComplete ? '/' : '/profile-setup', { replace: true });
     } catch (requestError) {
       setError(requestError.response?.data?.message || requestError.response?.data?.error || requestError.message);
     } finally {
@@ -56,7 +56,7 @@ export default function Register() {
         </form>
         <div className="auth-divider"><span>or</span></div>
         <GoogleAuthButton
-          onSuccess={() => navigate('/', { replace: true })}
+          onSuccess={(data) => navigate(data?.user?.profileComplete ? '/' : '/profile-setup', { replace: true })}
           onError={setError}
           onLoading={setBusy}
         />

@@ -15,7 +15,7 @@ export default function Login() {
     const token = data?.token || data?.accessToken;
     if (!token) throw new Error('The server did not return an authentication token.');
     localStorage.setItem('token', token);
-    navigate('/', { replace: true });
+    navigate(data?.user?.profileComplete ? '/' : '/profile-setup', { replace: true });
   };
 
   const submit = async (event) => {
@@ -47,7 +47,7 @@ export default function Login() {
         </form>
         <div className="auth-divider"><span>or</span></div>
         <GoogleAuthButton
-          onSuccess={() => navigate('/', { replace: true })}
+          onSuccess={(data) => navigate(data?.user?.profileComplete ? '/' : '/profile-setup', { replace: true })}
           onError={setError}
           onLoading={setBusy}
         />
