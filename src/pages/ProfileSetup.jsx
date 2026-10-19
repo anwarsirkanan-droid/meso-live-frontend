@@ -24,6 +24,8 @@ export default function ProfileSetup() {
     profilePicture: '',
   });
   const [loadingProfile, setLoadingProfile] = useState(true);
+  const [profileLoadError, setProfileLoadError] = useState('');
+  const [profileLoadAttempt, setProfileLoadAttempt] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [usernameCheck, setUsernameCheck] = useState({ status: 'idle', message: '' });
@@ -32,10 +34,12 @@ export default function ProfileSetup() {
 
   useEffect(() => {
     let active = true;
+    setLoadingProfile(true);
+    setProfileLoadError('');
     getProfile()
       .then((data) => {
         if (!active) return;
-        const profile = data?.user || data;
+        const profile = data;
         if (profile?.profileComplete) {
           navigate('/', { replace: true });
           return;
@@ -52,7 +56,14 @@ export default function ProfileSetup() {
       })
       .catch((requestError) => {
         if (active) {
-          setError(requestError.response?.data?.message || requestError.message || 'Could not load your profile.');
+          setProfileLoadError(
+            requestError.code === 'ECONNABORTED'
+              ? 'The profile request timed out. Check your connection and try again.'
+              : requestError.response?.data?.message ||
+                requestError.response?.data?.error ||
+                requestError.message ||
+                'Could not load your profile.',
+          );
         }
       })
       .finally(() => {
@@ -62,7 +73,7 @@ export default function ProfileSetup() {
     return () => {
       active = false;
     };
-  }, [navigate]);
+  }, [navigate, profileLoadAttempt]);
 
   const updateField = (field, value) => {
     setForm((current) => ({ ...current, [field]: value }));
@@ -132,13 +143,14 @@ export default function ProfileSetup() {
     }
     setSaving(true);
     try {
-      await saveProfileSetup({
+      const result = await saveProfileSetup({
         ...form,
         username: form.username.trim(),
         phoneNumber: form.phoneNumber.trim(),
         country: form.country.trim(),
         bio: form.bio.trim(),
       });
+      if (result?.user) localStorage.setItem('user', JSON.stringify(result.user));
       navigate('/', { replace: true });
     } catch (requestError) {
       setError(requestError.response?.data?.message || requestError.response?.data?.error || requestError.message);
@@ -148,7 +160,39 @@ export default function ProfileSetup() {
   };
 
   if (loadingProfile) {
-    return <main className="auth-page"><p className="muted" role="status">Loading your profile…</p></main>;
+    return <main className="auth-page" aria-busy="true"><p className="muted" role="status">Loading your profile…</p></main>;
+  }
+
+  if (profileLoadError) {
+    return (
+      <main className="auth-page">
+        <section className="auth-card">
+          <p className="eyebrow">PROFILE SETUP</p>
+          <h1>Could not load your profile</h1>
+          <p className="notice-error" role="alert">{profileLoadError}</p>
+          <div className="room-controls">
+            <button
+              className="button button-primary"
+              type="button"
+              onClick={() => setProfileLoadAttempt((attempt) => attempt + 1)}
+            >
+              Try again
+            </button>
+            <button
+              className="button button-secondary"
+              type="button"
+              onClick={() => {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                navigate('/login', { replace: true });
+              }}
+            >
+              Back to sign in
+            </button>
+          </div>
+        </section>
+      </main>
+    );
   }
 
   return (

@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { io } from 'socket.io-client';
 import { createRoom, getRooms } from '../api.js';
 import { Card, ErrorMessage, Field, Page } from '../components/UI.jsx';
+import { API_URL } from '../config.js';
 
 const CATEGORIES = ['Follow', 'Party', 'For You', 'Ethiopia', 'Rank'];
 
@@ -75,12 +77,51 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const inactiveRoomIds = useRef(new Set());
 
   useEffect(() => {
     let active = true;
+    const roomStatusSocket = io(API_URL, {
+      auth: { token: localStorage.getItem('token') || '' },
+    });
+    const refreshRooms = () => {
+      getRooms()
+        .then((data) => {
+          if (active) {
+            const activeRooms = Array.isArray(data)
+              ? data.filter((room) => !inactiveRoomIds.current.has(String(room._id)))
+              : [];
+            setRooms(activeRooms);
+            setError('');
+          }
+        })
+        .catch((requestError) => {
+          if (active) {
+            setError(requestError.response?.data?.message || 'Could not refresh live rooms. Please try again.');
+          }
+        });
+    };
+    const onRoomStatusChanged = ({ roomId, isLive } = {}) => {
+      if (!roomId) return;
+      if (isLive === false) {
+        inactiveRoomIds.current.add(String(roomId));
+        setRooms((current) => current.filter((room) => String(room._id) !== String(roomId)));
+        return;
+      }
+      if (isLive === true) {
+        inactiveRoomIds.current.delete(String(roomId));
+        refreshRooms();
+      }
+    };
+
+    roomStatusSocket.on('room-status-changed', onRoomStatusChanged);
     getRooms()
       .then((data) => {
-        if (active) setRooms(Array.isArray(data) ? data : []);
+        if (active) {
+          setRooms(Array.isArray(data)
+            ? data.filter((room) => !inactiveRoomIds.current.has(String(room._id)))
+            : []);
+        }
       })
       .catch((requestError) => {
         if (active) {
@@ -93,6 +134,8 @@ export default function HomePage() {
 
     return () => {
       active = false;
+      roomStatusSocket.off('room-status-changed', onRoomStatusChanged);
+      roomStatusSocket.disconnect();
     };
   }, []);
 

@@ -199,6 +199,12 @@ button { color: inherit; }
 .live-stage h2 { margin: 0 0 7px; font: 700 21px Manrope; }
 .live-stage p { margin: 0; font-size: 12px; }
 .room-controls { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 28px; }
+.room-audio-status { margin-top: 12px !important; }
+.room-mic-meter { width: min(220px, 80%); height: 6px; margin-top: 13px; overflow: hidden; border-radius: 99px; background: var(--border); }
+.room-mic-meter span { display: block; height: 100%; border-radius: inherit; background: #8f61ee; transition: width .12s ease; }
+.room-warning { margin: 12px 0 0; padding: 12px; border: 1px solid #67542a; border-radius: 12px; color: #f4d68c; background: #30291a; }
+.remote-room-audio-list { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.room-audio-enable { margin-top: 14px; }
 .round-control { width: 45px; height: 45px; border: 1px solid var(--border); border-radius: 50%; background: var(--surface-raised); cursor: pointer; }
 .admin-page { width: 100%; max-width: none; }
 .admin-page > .page { width: min(100% - 36px, 960px); padding-top: 10px; }

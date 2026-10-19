@@ -5,6 +5,8 @@ const API = axios.create({
   baseURL: `${API_URL}/api`,
 });
 
+const PROFILE_REQUEST_TIMEOUT_MS = 15000;
+
 API.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) {
@@ -19,6 +21,8 @@ export const login = (credentials) => API.post('/auth/login', credentials).then(
 export const register = (details) => API.post('/auth/register', details).then(dataFrom);
 export const googleLogin = (credential) =>
   API.post('/auth/google', { credential }).then(dataFrom);
+export const linkGoogleAccount = (credential) =>
+  API.post('/auth/link-google', { credential }).then(dataFrom);
 export const checkUsernameAvailability = (username) =>
   API.get('/users/username-availability', { params: { username } }).then(dataFrom);
 export const saveProfileSetup = (profile) =>
@@ -27,7 +31,15 @@ export const getRooms = () => API.get('/room/all').then(dataFrom);
 export const createRoom = (room) => API.post('/room/create', room).then(dataFrom);
 export const getRoom = (roomId) => API.get(`/room/${roomId}`).then(dataFrom);
 export const getMessages = () => API.get('/message').then(dataFrom);
-export const getProfile = () => API.get('/user/profile').then(dataFrom);
+export const getProfile = () =>
+  API.get('/auth/me', { timeout: PROFILE_REQUEST_TIMEOUT_MS }).then(({ data }) => {
+    const profile = data?.user || data?.profile || data;
+    if (!profile || typeof profile !== 'object' || Array.isArray(profile) ||
+        typeof profile.username !== 'string' || typeof profile.profileComplete !== 'boolean') {
+      throw new Error('The server returned an invalid profile. Please try again.');
+    }
+    return profile;
+  });
 export const getTheme = () => API.get('/user/theme').then(dataFrom);
 export const updateTheme = (theme) => API.put('/user/theme', theme).then(dataFrom);
 export const generateInvite = () => API.post('/invite/generate').then(dataFrom);

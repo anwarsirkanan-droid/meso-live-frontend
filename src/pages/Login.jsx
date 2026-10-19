@@ -15,6 +15,7 @@ export default function Login() {
     const token = data?.token || data?.accessToken;
     if (!token) throw new Error('The server did not return an authentication token.');
     localStorage.setItem('token', token);
+    if (data?.user) localStorage.setItem('user', JSON.stringify(data.user));
     navigate(data?.user?.profileComplete ? '/' : '/profile-setup', { replace: true });
   };
 
@@ -37,20 +38,20 @@ export default function Login() {
         <Link to="/" className="brand auth-brand">Meso <span>Live</span></Link>
         <p className="eyebrow">WELCOME BACK</p>
         <h1>Log in to your account</h1>
+        <GoogleAuthButton
+          onSuccess={(data) => navigate(data?.user?.profileComplete ? '/' : '/profile-setup', { replace: true })}
+          onError={setError}
+          onLoading={setBusy}
+        />
+        <div className="auth-divider"><span>or log in with username</span></div>
         <form className="form-stack" onSubmit={submit}>
-          <Field label="Email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} />
+          <Field label="Username or email" type="text" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} />
           <Field label="Password" type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} />
           <ErrorMessage>{error}</ErrorMessage>
           <button className="button button-primary button-full" type="submit" disabled={busy}>
             {busy ? 'Logging in…' : 'Login'}
           </button>
         </form>
-        <div className="auth-divider"><span>or</span></div>
-        <GoogleAuthButton
-          onSuccess={(data) => navigate(data?.user?.profileComplete ? '/' : '/profile-setup', { replace: true })}
-          onError={setError}
-          onLoading={setBusy}
-        />
         <p className="auth-switch">New to Meso Live? <Link to="/register">Sign Up</Link></p>
       </section>
     </main>

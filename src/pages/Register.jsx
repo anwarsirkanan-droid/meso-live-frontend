@@ -16,6 +16,7 @@ export default function Register() {
     const token = data?.token || data?.accessToken;
     if (!token) return false;
     localStorage.setItem('token', token);
+    if (data?.user) localStorage.setItem('user', JSON.stringify(data.user));
     return true;
   };
 

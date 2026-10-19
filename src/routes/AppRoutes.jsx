@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
+import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { getProfile } from '../api.js';
 import BottomNav from '../components/BottomNav.jsx';
 import Navbar from '../components/Navbar.jsx';
@@ -20,42 +20,65 @@ import SettingsPage from '../pages/SettingsPage.jsx';
 
 function ProtectedRoute({ adminOnly = false, allowIncomplete = false }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const token = localStorage.getItem('token');
-  const [access, setAccess] = useState({ status: 'loading' });
+  const [retry, setRetry] = useState(0);
+  const [access, setAccess] = useState({ status: 'loading', token });
 
   useEffect(() => {
     if (!token) {
-      setAccess({ status: 'denied' });
+      setAccess({ status: 'denied', token: null });
       return;
     }
 
     let active = true;
+    setAccess({ status: 'loading', token });
     getProfile()
       .then((data) => {
-        const profile = data?.user || data;
         if (active) {
-          setAccess({ status: 'loaded', profile });
+          setAccess({ status: 'loaded', token, profile: data });
         }
       })
       .catch((error) => {
         if (active) {
-          setAccess({ status: 'error', message: error.response?.data?.message || error.message });
+          const message = error.code === 'ECONNABORTED'
+            ? 'The profile request timed out. Check your connection and try again.'
+            : error.response?.data?.message || error.response?.data?.error || error.message;
+          setAccess({ status: 'error', token, message });
         }
       });
 
     return () => {
       active = false;
     };
-  }, [token]);
+  }, [token, retry]);
 
   if (!token) return <Navigate to="/login" replace state={{ from: location }} />;
-  if (access.status === 'loading') {
-    return <main className="page"><p className="muted">Loading your profile…</p></main>;
+  if (access.token !== token || access.status === 'loading') {
+    return <main className="page" aria-busy="true"><p className="muted" role="status">Loading your profile…</p></main>;
   }
   if (access.status === 'error') {
     return (
       <main className="page">
-        <div className="notice notice-error">Could not load your profile: {access.message}</div>
+        <div className="notice notice-error" role="alert">
+          <p>Could not load your profile: {access.message}</p>
+          <div className="room-controls">
+            <button className="button button-primary" type="button" onClick={() => setRetry((count) => count + 1)}>
+              Try again
+            </button>
+            <button
+              className="button button-secondary"
+              type="button"
+              onClick={() => {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                navigate('/login', { replace: true });
+              }}
+            >
+              Back to sign in
+            </button>
+          </div>
+        </div>
       </main>
     );
   }

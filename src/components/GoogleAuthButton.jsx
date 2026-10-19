@@ -5,6 +5,7 @@ function saveSession(data) {
   const token = data?.token || data?.accessToken;
   if (!token) throw new Error('Google sign-in succeeded but the server did not return a token.');
   localStorage.setItem('token', token);
+  if (data?.user) localStorage.setItem('user', JSON.stringify(data.user));
 }
 
 export default function GoogleAuthButton({ onSuccess, onError, onLoading }) {
