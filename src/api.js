@@ -32,6 +32,12 @@ export const updateProfileAvatar = (avatar) =>
 export const getRooms = () => API.get('/room/all').then(dataFrom);
 export const createRoom = (room) => API.post('/room/create', room).then(dataFrom);
 export const getRoom = (roomId) => API.get(`/room/${roomId}`).then(dataFrom);
+export const takeRoomSeat = (roomId, seatIndex) =>
+  API.post(`/room/${roomId}/seat/${seatIndex}/take`).then(dataFrom);
+export const leaveRoomSeat = (roomId, seatIndex) =>
+  API.post(`/room/${roomId}/seat/${seatIndex}/leave`).then(dataFrom);
+export const getGiftCatalog = () => API.get('/gift/catalog').then(dataFrom);
+export const sendGift = (gift) => API.post('/gift/send', gift).then(dataFrom);
 export const getMessages = () => API.get('/message').then(dataFrom);
 function profileFrom(response) {
   const profile = response.data?.user || response.data?.profile || response.data;

@@ -230,7 +230,7 @@ export default function HomePage() {
                     {room.category} · {memberCount} listening · {room.isLive ? 'Live' : 'Offline'}
                   </p>
                   <Link className="button button-primary button-full" to={`/live/${room._id}`}>
-                    Join room
+                    Join voice room
                   </Link>
                 </div>
               </Card>

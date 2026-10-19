@@ -1,6 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getRoom } from '../api.js';
+import {
+  getGiftCatalog,
+  getProfile,
+  getRoom,
+  leaveRoomSeat,
+  sendGift,
+  takeRoomSeat,
+} from '../api.js';
 import { Card, Page } from '../components/UI.jsx';
 import socket from '../socket.js';
 
@@ -49,6 +56,16 @@ export default function LiveRoomPage() {
   const { roomId } = useParams();
   const navigate = useNavigate();
   const [room, setRoom] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [gifts, setGifts] = useState([]);
+  const [selectedGiftId, setSelectedGiftId] = useState('');
+  const [selectedReceiverId, setSelectedReceiverId] = useState('');
+  const [roomActionError, setRoomActionError] = useState('');
+  const [giftError, setGiftError] = useState('');
+  const [giftFeedback, setGiftFeedback] = useState('');
+  const [roomActionBusy, setRoomActionBusy] = useState(false);
+  const [giftBusy, setGiftBusy] = useState(false);
+  const [giftFeed, setGiftFeed] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [warning, setWarning] = useState('');
@@ -83,6 +100,49 @@ export default function LiveRoomPage() {
 
     return () => {
       active = false;
+    };
+  }, [roomId]);
+
+  useEffect(() => {
+    let active = true;
+    getProfile()
+      .then((data) => {
+        if (active) setProfile(data);
+      })
+      .catch((requestError) => {
+        if (active) {
+          setRoomActionError(requestError.response?.data?.message || requestError.message || 'Could not load your profile.');
+        }
+      });
+    getGiftCatalog()
+      .then((data) => {
+        if (!active) return;
+        const catalog = Array.isArray(data) ? data : [];
+        setGifts(catalog);
+        setSelectedGiftId(catalog[0]?._id || '');
+      })
+      .catch((requestError) => {
+        if (active) {
+          setGiftError(requestError.response?.data?.error || requestError.message || 'Could not load available gifts.');
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const onRoomUpdated = (updatedRoom) => {
+      if (String(updatedRoom?._id) === String(roomId)) setRoom(updatedRoom);
+    };
+    const onGiftReceived = (gift) => {
+      setGiftFeed((current) => [gift, ...current].slice(0, 5));
+    };
+    socket.on('room_updated', onRoomUpdated);
+    socket.on('gift_received', onGiftReceived);
+    return () => {
+      socket.off('room_updated', onRoomUpdated);
+      socket.off('gift_received', onGiftReceived);
     };
   }, [roomId]);
 
@@ -392,7 +452,72 @@ export default function LiveRoomPage() {
     });
   };
 
+  const currentUserId = String(profile?._id || profile?.id || '');
+  const ownerId = String(room?.ownerId?._id || room?.ownerId?.id || room?.ownerId || '');
   const host = room?.ownerId && typeof room.ownerId === 'object' ? room.ownerId : null;
+  const roomSeats = useMemo(() => Array.from({ length: 25 }, (_, seatIndex) =>
+    room?.seats?.find((seat) => seat.seatIndex === seatIndex) || { seatIndex, userId: null },
+  ), [room]);
+  const hasDesignatedCrownSeat = roomSeats.some((seat) => seat.isCrownMic);
+  const ownSeat = roomSeats.find((seat) => {
+    const seatedUserId = String(seat.userId?._id || seat.userId?.id || seat.userId || '');
+    return currentUserId && seatedUserId === currentUserId;
+  });
+  const giftRecipients = useMemo(() => [
+    ...(ownerId && ownerId !== currentUserId
+      ? [{ id: ownerId, name: host?.username || 'Room host' }]
+      : []),
+    ...roomSeats.flatMap((seat) => {
+      const user = seat.userId && typeof seat.userId === 'object' ? seat.userId : null;
+      const id = String(user?._id || user?.id || seat.userId || '');
+      if (!id || id === currentUserId || id === ownerId) return [];
+      return [{ id, name: user?.username || `Mic ${seat.seatIndex + 1}` }];
+    }),
+  ], [currentUserId, host?.username, ownerId, roomSeats]);
+
+  useEffect(() => {
+    if (giftRecipients.length && !giftRecipients.some(({ id }) => id === selectedReceiverId)) {
+      setSelectedReceiverId(giftRecipients[0].id);
+    }
+  }, [giftRecipients, selectedReceiverId]);
+
+  const changeSeat = async (seat) => {
+    setRoomActionBusy(true);
+    setRoomActionError('');
+    try {
+      const isOwnSeat = String(seat.userId?._id || seat.userId?.id || seat.userId || '') === currentUserId;
+      if (isOwnSeat) {
+        await leaveRoomSeat(roomId, seat.seatIndex);
+      } else {
+        await takeRoomSeat(roomId, seat.seatIndex);
+      }
+      setRoom(await getRoom(roomId));
+    } catch (requestError) {
+      setRoomActionError(requestError.response?.data?.message || requestError.response?.data?.error || requestError.message);
+    } finally {
+      setRoomActionBusy(false);
+    }
+  };
+
+  const giftSelectedUser = async () => {
+    setGiftBusy(true);
+    setGiftError('');
+    setGiftFeedback('');
+    try {
+      const result = await sendGift({
+        roomId,
+        receiverId: selectedReceiverId,
+        giftId: selectedGiftId,
+      });
+      setProfile((current) => current ? { ...current, coins: result.senderBalance } : current);
+      setGiftFeedback(result.message || 'Gift sent successfully.');
+    } catch (requestError) {
+      setGiftError(requestError.response?.data?.error || requestError.response?.data?.message || requestError.message);
+    } finally {
+      setGiftBusy(false);
+    }
+  };
+
   const hostName = host?.username;
   const joined = status === 'connected' || status === 'reconnecting';
   const connectedPeerCount = remotePeers.filter((peer) => peer.connected).length;
@@ -421,71 +546,177 @@ export default function LiveRoomPage() {
       {!loading && warning && <div className="room-warning" role="status">{warning}</div>}
 
       {!loading && room && (
-        <Card className="live-stage">
-          {room.isLive ? (
-            <span className="live-pill"><i /> LIVE NOW</span>
-          ) : (
-            <span className="count-badge">OFFLINE</span>
-          )}
-          {host?.avatar ? (
-            <img className="host-orb host-avatar-image" src={host.avatar} alt="" />
-          ) : (
-            <div className="host-orb host-avatar-fallback" aria-label={hostName || 'Host'}>
-              {hostName ? hostName.slice(0, 1).toUpperCase() : '?'}
-            </div>
-          )}
-          <h2>{hostName || 'Host unavailable'}</h2>
-          <p className="muted">{room.title}</p>
-          <p className="muted room-audio-status" role="status">
-            {statusLabel}{joined ? ` · ${connectedPeerCount} other${connectedPeerCount === 1 ? '' : 's'} connected` : ''}
-          </p>
-          {joined && (
-            <div className="room-mic-meter" aria-label={`Microphone level ${micLevel}%`}>
-              <span style={{ width: `${micLevel}%` }} />
-            </div>
-          )}
-          <div className="room-controls">
-            {joined ? (
-              <>
-                <button
-                  className="button button-secondary"
-                  type="button"
-                  onClick={toggleMicrophone}
-                  aria-pressed={!micEnabled}
-                >
-                  {micEnabled ? 'Mute microphone' : 'Unmute microphone'}
-                </button>
-                <button className="button button-danger" type="button" onClick={leaveRoom}>
-                  Leave room
-                </button>
-              </>
+        <>
+          <Card className="live-stage">
+            {room.isLive ? (
+              <span className="live-pill"><i /> LIVE NOW</span>
             ) : (
-              <>
-                <button
-                  className="button button-primary"
-                  type="button"
-                  onClick={joinRoom}
-                  disabled={status === 'requesting-microphone' || status === 'connecting'}
-                >
-                  {status === 'requesting-microphone' ? 'Allow microphone…' : 'Join voice room'}
-                </button>
-                <button className="button button-quiet" type="button" onClick={() => navigate('/')}>
-                  Back
-                </button>
-              </>
+              <span className="count-badge">OFFLINE</span>
             )}
+            {host?.avatar ? (
+              <img className="host-orb host-avatar-image" src={host.avatar} alt="" />
+            ) : (
+              <div className="host-orb host-avatar-fallback" aria-label={hostName || 'Host'}>
+                {hostName ? hostName.slice(0, 1).toUpperCase() : '?'}
+              </div>
+            )}
+            <h2>{hostName || 'Host unavailable'}</h2>
+            <p className="muted">{room.title}</p>
+            <p className="muted room-audio-status" role="status">
+              {statusLabel}{joined ? ` · ${connectedPeerCount} other${connectedPeerCount === 1 ? '' : 's'} connected` : ''}
+            </p>
+            {joined && (
+              <div className="room-mic-meter" aria-label={`Microphone level ${micLevel}%`}>
+                <span style={{ width: `${micLevel}%` }} />
+              </div>
+            )}
+            <div className="room-controls">
+              {joined ? (
+                <>
+                  <button
+                    className="button button-secondary"
+                    type="button"
+                    onClick={toggleMicrophone}
+                    aria-pressed={!micEnabled}
+                  >
+                    {micEnabled ? 'Mute microphone' : 'Unmute microphone'}
+                  </button>
+                  <button className="button button-danger" type="button" onClick={leaveRoom}>
+                    Leave room
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    className="button button-primary"
+                    type="button"
+                    onClick={joinRoom}
+                    disabled={status === 'requesting-microphone' || status === 'connecting'}
+                  >
+                    {status === 'requesting-microphone' ? 'Allow microphone…' : 'Join voice room'}
+                  </button>
+                  <button className="button button-quiet" type="button" onClick={() => navigate('/')}>
+                    Back
+                  </button>
+                </>
+              )}
+            </div>
+            {playbackBlocked && (
+              <button className="button button-secondary room-audio-enable" type="button" onClick={enableRemoteAudio}>
+                Enable incoming audio
+              </button>
+            )}
+            <div className="remote-room-audio-list" aria-hidden="true">
+              {remotePeers.map((peer) => (
+                <RemoteAudio key={peer.id} stream={peer.stream} onPlaybackBlocked={handlePlaybackBlocked} />
+              ))}
+            </div>
+          </Card>
+
+          <div className="live-room-layout">
+            <section className="card room-seats-panel" aria-labelledby="room-seats-title">
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">TAKE THE FLOOR</p>
+                  <h2 id="room-seats-title">Mic seats</h2>
+                </div>
+                <span className="count-badge">{roomSeats.filter((seat) => seat.userId).length} / 25</span>
+              </div>
+              <p className="muted room-panel-hint">Tap an open seat to join the conversation. Tap your seat to leave it.</p>
+              {roomActionError && <p className="form-error" role="alert">{roomActionError}</p>}
+              <div className="mic-seat-grid">
+                {roomSeats.map((seat) => {
+                  const user = seat.userId && typeof seat.userId === 'object' ? seat.userId : null;
+                  const seatUserId = String(user?._id || user?.id || seat.userId || '');
+                  const occupied = Boolean(seatUserId);
+                  const isMine = occupied && seatUserId === currentUserId;
+                  const crown = seat.isCrownMic === true || (!hasDesignatedCrownSeat && seat.seatIndex === 0);
+                  const disabled = roomActionBusy || (occupied && !isMine) || (seat.isLocked && !isMine);
+                  const seatLabel = user?.username || (isMine ? 'You' : 'Occupied');
+                  return (
+                    <button
+                      className={`mic-seat${occupied ? ' is-occupied' : ''}${isMine ? ' is-mine' : ''}${crown ? ' is-crown' : ''}${seat.isLocked ? ' is-locked' : ''}`}
+                      key={seat.seatIndex}
+                      type="button"
+                      onClick={() => changeSeat(seat)}
+                      disabled={disabled || !currentUserId}
+                      aria-label={`${crown ? 'Crown mic, ' : ''}Mic ${seat.seatIndex + 1}, ${occupied ? seatLabel : seat.isLocked ? 'locked' : 'available'}`}
+                      title={crown ? 'Crown Mic' : `Mic ${seat.seatIndex + 1}`}
+                    >
+                      <span className="mic-seat-icon" aria-hidden="true">{crown ? '👑' : occupied ? '🎙️' : '+'}</span>
+                      <span className="mic-seat-name">{occupied ? seatLabel : `Mic ${seat.seatIndex + 1}`}</span>
+                      {seat.isLocked && <span className="mic-seat-lock" aria-label="Locked">🔒</span>}
+                    </button>
+                  );
+                })}
+              </div>
+              {ownSeat && (
+                <p className="muted room-panel-hint">You are on {ownSeat.isCrownMic ? 'the Crown Mic' : `Mic ${ownSeat.seatIndex + 1}`}.</p>
+              )}
+            </section>
+
+            <aside className="card room-gifts-panel" aria-labelledby="room-gifts-title">
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">SHOW SOME LOVE</p>
+                  <h2 id="room-gifts-title">Send a gift</h2>
+                </div>
+                <span className="count-badge">{(Number(profile?.coins) || 0).toLocaleString()} coins</span>
+              </div>
+              {giftError && <p className="form-error" role="alert">{giftError}</p>}
+              {giftFeedback && <p className="success-message" role="status">{giftFeedback}</p>}
+              {giftRecipients.length > 0 ? (
+                <label className="field room-gift-recipient">
+                  <span>Send to</span>
+                  <select value={selectedReceiverId} onChange={(event) => setSelectedReceiverId(event.target.value)}>
+                    {giftRecipients.map((recipient) => (
+                      <option key={recipient.id} value={recipient.id}>{recipient.name}</option>
+                    ))}
+                  </select>
+                </label>
+              ) : (
+                <p className="muted room-panel-hint">There is no other participant to receive a gift yet.</p>
+              )}
+              {gifts.length > 0 ? (
+                <div className="room-gift-grid">
+                  {gifts.map((gift) => (
+                    <button
+                      className={`room-gift-option${selectedGiftId === gift._id ? ' is-selected' : ''}`}
+                      key={gift._id}
+                      type="button"
+                      onClick={() => setSelectedGiftId(gift._id)}
+                      aria-pressed={selectedGiftId === gift._id}
+                    >
+                      <span aria-hidden="true">{gift.icon}</span>
+                      <strong>{gift.name}</strong>
+                      <small>{gift.coinPrice.toLocaleString()} coins</small>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                !giftError && <p className="muted room-panel-hint">No gifts are available right now.</p>
+              )}
+              <button
+                className="button button-primary button-full room-send-gift"
+                type="button"
+                onClick={giftSelectedUser}
+                disabled={giftBusy || !selectedGiftId || !selectedReceiverId}
+              >
+                {giftBusy ? 'Sending gift…' : 'Send selected gift'}
+              </button>
+              {giftFeed.length > 0 && (
+                <div className="room-gift-feed" aria-live="polite">
+                  <h3>Recent gifts</h3>
+                  {giftFeed.map((gift, index) => (
+                    <p key={`${gift.timestamp || ''}-${index}`}>
+                      {gift.giftIcon} {gift.senderName} sent {gift.giftName} to {gift.receiverName}
+                    </p>
+                  ))}
+                </div>
+              )}
+            </aside>
           </div>
-          {playbackBlocked && (
-            <button className="button button-secondary room-audio-enable" type="button" onClick={enableRemoteAudio}>
-              Enable incoming audio
-            </button>
-          )}
-          <div className="remote-room-audio-list" aria-hidden="true">
-            {remotePeers.map((peer) => (
-              <RemoteAudio key={peer.id} stream={peer.stream} onPlaybackBlocked={handlePlaybackBlocked} />
-            ))}
-          </div>
-        </Card>
+        </>
       )}
     </Page>
   );
