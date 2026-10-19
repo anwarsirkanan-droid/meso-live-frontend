@@ -8,7 +8,7 @@ import {
   sendGift,
   takeRoomSeat,
 } from '../api.js';
-import { Card, Page } from '../components/UI.jsx';
+import { Card } from '../components/UI.jsx';
 import socket from '../socket.js';
 
 const turnUrls = (import.meta.env.VITE_TURN_URLS || '')
@@ -79,6 +79,7 @@ export default function LiveRoomPage() {
   const animationFrameRef = useRef(null);
   const disconnectingRef = useRef(false);
   const roomActiveRef = useRef(true);
+  const requestRoomJoinRef = useRef(null);
   const handlePlaybackBlocked = useCallback(() => setPlaybackBlocked(true), []);
 
   useEffect(() => {
@@ -294,9 +295,8 @@ export default function LiveRoomPage() {
     };
 
     const onConnect = () => {
-      setStatus('connected');
       setError('');
-      socket.emit('join-room', roomId);
+      requestRoomJoin();
     };
     const onDisconnect = () => {
       if (!disconnectingRef.current) setStatus('reconnecting');
@@ -309,6 +309,32 @@ export default function LiveRoomPage() {
       setStatus('error');
       setError(`Could not connect to room signaling: ${connectError.message}`);
     };
+    let joinRequested = false;
+    const requestRoomJoin = () => {
+      if (joinRequested) return;
+      joinRequested = true;
+      setStatus('connecting');
+      socket.timeout(10000).emit('join-room', roomId, (timeoutError, result) => {
+        if (timeoutError) {
+          joinRequested = false;
+          setStatus('error');
+          setError('The server did not confirm joining this room. Please try again.');
+          localStreamRef.current?.getTracks().forEach((track) => track.stop());
+          localStreamRef.current = null;
+          return;
+        }
+        if (result?.error) {
+          joinRequested = false;
+          setStatus('error');
+          setError(result.error);
+          localStreamRef.current?.getTracks().forEach((track) => track.stop());
+          localStreamRef.current = null;
+          return;
+        }
+        setStatus('connected');
+      });
+    };
+    requestRoomJoinRef.current = requestRoomJoin;
     const onUserLeft = (payload) => {
       const peerId = getPeerId(payload);
       if (peerId) removePeer(peerId);
@@ -326,6 +352,7 @@ export default function LiveRoomPage() {
 
     return () => {
       roomActiveRef.current = false;
+      requestRoomJoinRef.current = null;
       socket.off('connect', onConnect);
       socket.off('disconnect', onDisconnect);
       socket.off('connect_error', onConnectError);
@@ -404,8 +431,7 @@ export default function LiveRoomPage() {
       setStatus('connecting');
       socket.connect();
       if (socket.connected) {
-        setStatus('connected');
-        socket.emit('join-room', roomId);
+        requestRoomJoinRef.current?.();
       }
     } catch (joinError) {
       localStreamRef.current?.getTracks().forEach((track) => track.stop());
@@ -489,6 +515,9 @@ export default function LiveRoomPage() {
       if (isOwnSeat) {
         await leaveRoomSeat(roomId, seat.seatIndex);
       } else {
+        if (!['connecting', 'connected', 'reconnecting'].includes(status)) {
+          void joinRoom();
+        }
         await takeRoomSeat(roomId, seat.seatIndex);
       }
       setRoom(await getRoom(roomId));
@@ -522,7 +551,7 @@ export default function LiveRoomPage() {
   const joined = status === 'connected' || status === 'reconnecting';
   const connectedPeerCount = remotePeers.filter((peer) => peer.connected).length;
   const statusLabel = {
-    idle: 'Not connected',
+    idle: 'Ready to join',
     'requesting-microphone': 'Requesting microphone',
     connecting: 'Connecting to room',
     connected: connectedPeerCount ? 'Audio connected' : 'Connected · waiting for others',
@@ -531,10 +560,58 @@ export default function LiveRoomPage() {
   }[status];
 
   return (
-    <Page
-      title={room?.title || 'Live room'}
-      eyebrow={room?.category ? room.category.toUpperCase() : `ROOM ${roomId}`}
-    >
+    <main className="live-room-page">
+      <header className="live-room-header">
+        <div className="live-room-heading">
+          <p className="eyebrow">{room?.category ? room.category.toUpperCase() : `ROOM ${roomId}`}</p>
+          <h1>{room?.title || 'Live room'}</h1>
+          <p className="muted live-room-host">
+            {room?.isLive && <span className="live-pill"><i /> LIVE NOW</span>}
+            {hostName ? `Hosted by ${hostName}` : 'Join the conversation'}
+            <span className={`live-room-connection is-${status}`} role="status">{statusLabel}</span>
+          </p>
+        </div>
+        <div className="room-controls live-room-header-controls">
+          {joined ? (
+            <>
+              <button
+                className="button button-secondary"
+                type="button"
+                onClick={toggleMicrophone}
+                aria-pressed={!micEnabled}
+              >
+                {micEnabled ? 'Mute microphone' : 'Unmute microphone'}
+              </button>
+              <button className="button button-danger" type="button" onClick={leaveRoom}>
+                Leave room
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                className="button button-primary"
+                type="button"
+                onClick={joinRoom}
+                disabled={status === 'requesting-microphone' || status === 'connecting'}
+              >
+                {status === 'requesting-microphone'
+                  ? 'Allow microphone…'
+                  : status === 'connecting'
+                    ? 'Connecting…'
+                    : 'Join voice room'}
+              </button>
+              <button className="button button-quiet" type="button" onClick={() => navigate('/')}>
+                Back
+              </button>
+            </>
+          )}
+          {joined && (
+            <div className="room-mic-meter" aria-label={`Microphone level ${micLevel}%`}>
+              <span style={{ width: `${micLevel}%` }} />
+            </div>
+          )}
+        </div>
+      </header>
       {loading && (
         <div className="rooms-loading" role="status" aria-label="Loading room">
           <span className="loading-spinner" />
@@ -544,75 +621,19 @@ export default function LiveRoomPage() {
 
       {!loading && error && <div className="notice-error" role="alert">{error}</div>}
       {!loading && warning && <div className="room-warning" role="status">{warning}</div>}
+      {playbackBlocked && (
+        <button className="button button-secondary room-audio-enable" type="button" onClick={enableRemoteAudio}>
+          Enable incoming audio
+        </button>
+      )}
+      <div className="remote-room-audio-list" aria-hidden="true">
+        {remotePeers.map((peer) => (
+          <RemoteAudio key={peer.id} stream={peer.stream} onPlaybackBlocked={handlePlaybackBlocked} />
+        ))}
+      </div>
 
       {!loading && room && (
         <>
-          <Card className="live-stage">
-            {room.isLive ? (
-              <span className="live-pill"><i /> LIVE NOW</span>
-            ) : (
-              <span className="count-badge">OFFLINE</span>
-            )}
-            {host?.avatar ? (
-              <img className="host-orb host-avatar-image" src={host.avatar} alt="" />
-            ) : (
-              <div className="host-orb host-avatar-fallback" aria-label={hostName || 'Host'}>
-                {hostName ? hostName.slice(0, 1).toUpperCase() : '?'}
-              </div>
-            )}
-            <h2>{hostName || 'Host unavailable'}</h2>
-            <p className="muted">{room.title}</p>
-            <p className="muted room-audio-status" role="status">
-              {statusLabel}{joined ? ` · ${connectedPeerCount} other${connectedPeerCount === 1 ? '' : 's'} connected` : ''}
-            </p>
-            {joined && (
-              <div className="room-mic-meter" aria-label={`Microphone level ${micLevel}%`}>
-                <span style={{ width: `${micLevel}%` }} />
-              </div>
-            )}
-            <div className="room-controls">
-              {joined ? (
-                <>
-                  <button
-                    className="button button-secondary"
-                    type="button"
-                    onClick={toggleMicrophone}
-                    aria-pressed={!micEnabled}
-                  >
-                    {micEnabled ? 'Mute microphone' : 'Unmute microphone'}
-                  </button>
-                  <button className="button button-danger" type="button" onClick={leaveRoom}>
-                    Leave room
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    className="button button-primary"
-                    type="button"
-                    onClick={joinRoom}
-                    disabled={status === 'requesting-microphone' || status === 'connecting'}
-                  >
-                    {status === 'requesting-microphone' ? 'Allow microphone…' : 'Join voice room'}
-                  </button>
-                  <button className="button button-quiet" type="button" onClick={() => navigate('/')}>
-                    Back
-                  </button>
-                </>
-              )}
-            </div>
-            {playbackBlocked && (
-              <button className="button button-secondary room-audio-enable" type="button" onClick={enableRemoteAudio}>
-                Enable incoming audio
-              </button>
-            )}
-            <div className="remote-room-audio-list" aria-hidden="true">
-              {remotePeers.map((peer) => (
-                <RemoteAudio key={peer.id} stream={peer.stream} onPlaybackBlocked={handlePlaybackBlocked} />
-              ))}
-            </div>
-          </Card>
-
           <div className="live-room-layout">
             <section className="card room-seats-panel" aria-labelledby="room-seats-title">
               <div className="section-heading">
@@ -718,6 +739,6 @@ export default function LiveRoomPage() {
           </div>
         </>
       )}
-    </Page>
+    </main>
   );
 }

@@ -77,7 +77,11 @@ export const applyForSubAgency = (application) =>
   API.post('/agency/sub-apply', application).then(dataFrom);
 export const applyForAgencyExit = (application = {}) =>
   API.post('/agency/exit-apply', application).then(dataFrom);
-export const recharge = (packageId) => API.post('/payment/chapa', { packageId }).then(dataFrom);
-export const playDice = (bet) => API.post('/games/dice', bet).then(dataFrom);
+export const getRechargePackages = () => API.get('/payment/packages').then(dataFrom);
+export const recharge = (packageId, customer) =>
+  API.post('/payment/initialize', { packageId, currency: 'ETB', customer }).then(dataFrom);
+export const verifyPayment = (transactionRef) =>
+  API.get(`/payment/verify/${encodeURIComponent(transactionRef)}`).then(dataFrom);
+export const playGame = (game) => API.post('/game/play', game).then(dataFrom);
 
 export default API;

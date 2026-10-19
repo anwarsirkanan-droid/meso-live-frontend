@@ -4,6 +4,7 @@ import { getProfile, linkGoogleAccount } from '../api.js';
 import ThemeToggle from '../components/ThemeToggle.jsx';
 import { GoogleLogin } from '@react-oauth/google';
 import { Card, ErrorMessage, Page } from '../components/UI.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 export default function SettingsPage() {
   const [animations, setAnimations] = useState(() => localStorage.getItem('animations') !== 'off');
@@ -20,6 +21,7 @@ export default function SettingsPage() {
   const [linkMessage, setLinkMessage] = useState('');
   const [linking, setLinking] = useState(false);
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   useEffect(() => {
     getProfile()
@@ -44,9 +46,8 @@ export default function SettingsPage() {
     localStorage.setItem('language', value);
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  const handleLogout = () => {
+    logout();
     navigate('/login', { replace: true });
   };
 
@@ -117,7 +118,7 @@ export default function SettingsPage() {
           </select>
         </label>
       </Card>
-      <button className="button button-danger button-full" type="button" onClick={logout}>Log out</button>
+      <button className="button button-danger button-full" type="button" onClick={handleLogout}>Log out</button>
     </Page>
   );
 }

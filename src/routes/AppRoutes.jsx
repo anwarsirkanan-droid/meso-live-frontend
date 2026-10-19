@@ -113,7 +113,8 @@ export default function AppRoutes() {
         <Route path="/profile-setup" element={<ProfileSetup />} />
       </Route>
       <Route element={<ProtectedRoute />}>
-        <Route element={<AppLayout />}>
+          <Route path="/live/:roomId" element={<LiveRoomPage />} />
+          <Route element={<AppLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/profile" element={<ProfilePage />} />
@@ -124,7 +125,6 @@ export default function AppRoutes() {
           <Route path="/profile/face-verify" element={<FaceVerifyPage />} />
           <Route path="/profile/recharge" element={<RechargePage />} />
           <Route path="/games/dice" element={<DiceGamePage />} />
-          <Route path="/live/:roomId" element={<LiveRoomPage />} />
         </Route>
       </Route>
       <Route element={<ProtectedRoute adminOnly />}>

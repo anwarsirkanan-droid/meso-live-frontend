@@ -5,6 +5,10 @@ import VerificationBadge from '../components/VerificationBadge.jsx';
 import { Card, Loading, Page, PageLink } from '../components/UI.jsx';
 
 const formatPoints = (points) => (Number(points) || 0).toLocaleString();
+const formatPublicId = (value) => {
+  const id = String(value ?? '');
+  return /^\d{1,6}$/.test(id) ? id.padStart(6, '0') : null;
+};
 const MAX_AVATAR_BYTES = 600 * 1024;
 
 async function compressAvatar(file) {
@@ -164,10 +168,10 @@ export default function ProfilePage() {
   }, [loadHostTasks, profile?.role]);
 
   const copyUserId = async () => {
-    const userId = profile?._id || profile?.id;
-    if (!userId) return;
+    const publicId = formatPublicId(profile?.publicId);
+    if (!publicId) return;
     try {
-      await navigator.clipboard.writeText(String(userId));
+      await navigator.clipboard.writeText(publicId);
       setCopyStatus('User ID copied.');
     } catch (copyError) {
       setCopyStatus(`Could not copy User ID: ${copyError.message}`);
@@ -209,7 +213,7 @@ export default function ProfilePage() {
 
   const canOpenAgency = profile?.role === 'AGENT' || profile?.role === 'HOST';
   const isHost = profile?.role === 'HOST';
-  const userId = profile?._id || profile?.id;
+  const publicId = formatPublicId(profile?.publicId);
 
   return (
     <Page title="My profile" eyebrow="YOUR MESO LIVE ACCOUNT">
@@ -237,9 +241,9 @@ export default function ProfilePage() {
         {error ? <p className="form-error" role="alert">{error}</p> : !profile ? <Loading>Loading profile…</Loading> : (
           <>
             <h2>{profile.username || 'Meso Live member'}</h2>
-            {userId && (
+            {publicId != null && (
               <div className="profile-user-id">
-                <span>ID: {userId}</span>
+                <span>ID: {publicId}</span>
                 <button className="button button-quiet button-small" type="button" onClick={copyUserId}>
                   Copy
                 </button>

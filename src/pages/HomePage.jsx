@@ -240,8 +240,8 @@ export default function HomePage() {
       )}
 
       <Card className="feature-card">
-        <div><p className="eyebrow">TAKE A BREAK</p><h2>Try your luck</h2><p className="muted">Play a quick round of dice.</p></div>
-        <Link className="button button-secondary" to="/games/dice">Play dice <span aria-hidden="true">→</span></Link>
+        <div><p className="eyebrow">TAKE A BREAK</p><h2>Try your luck</h2><p className="muted">Play a quick round in a live room.</p></div>
+        <Link className="button button-secondary" to="/games/dice">Open Game Center <span aria-hidden="true">→</span></Link>
       </Card>
 
       {showCreateDialog && (
