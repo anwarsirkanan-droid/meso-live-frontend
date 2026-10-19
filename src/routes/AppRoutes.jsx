@@ -1,0 +1,110 @@
+import { useEffect, useState } from 'react';
+import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
+import { getProfile } from '../api.js';
+import BottomNav from '../components/BottomNav.jsx';
+import Navbar from '../components/Navbar.jsx';
+import AdminDashboard from '../pages/AdminDashboard.jsx';
+import DiceGamePage from '../pages/DiceGamePage.jsx';
+import FaceVerifyPage from '../pages/FaceVerifyPage.jsx';
+import HomePage from '../pages/HomePage.jsx';
+import HostWalletPage from '../pages/HostWalletPage.jsx';
+import InvitePage from '../pages/InvitePage.jsx';
+import LiveRoomPage from '../pages/LiveRoomPage.jsx';
+import Login from '../pages/Login.jsx';
+import MessagesPage from '../pages/MessagesPage.jsx';
+import ProfilePage from '../pages/ProfilePage.jsx';
+import RechargePage from '../pages/RechargePage.jsx';
+import Register from '../pages/Register.jsx';
+import SettingsPage from '../pages/SettingsPage.jsx';
+
+function ProtectedRoute({ adminOnly = false }) {
+  const location = useLocation();
+  const token = localStorage.getItem('token');
+  const [access, setAccess] = useState({ status: adminOnly ? 'loading' : 'allowed' });
+
+  useEffect(() => {
+    if (!token) {
+      setAccess({ status: 'denied' });
+      return;
+    }
+
+    if (!adminOnly) {
+      setAccess({ status: 'allowed' });
+      return;
+    }
+
+    let active = true;
+    getProfile()
+      .then((data) => {
+        const profile = data?.user || data;
+        if (active) {
+          setAccess({
+            status: profile?.role === 'admin' || profile?.isAdmin === true ? 'allowed' : 'denied',
+          });
+        }
+      })
+      .catch((error) => {
+        if (active) {
+          setAccess({ status: 'error', message: error.response?.data?.message || error.message });
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [adminOnly, token]);
+
+  if (!token) return <Navigate to="/login" replace state={{ from: location }} />;
+  if (access.status === 'denied') {
+    return <Navigate to={adminOnly ? '/' : '/login'} replace state={{ from: location }} />;
+  }
+  if (access.status === 'loading') {
+    return <main className="page"><p className="muted">Checking administrator access…</p></main>;
+  }
+  if (access.status === 'error') {
+    return (
+      <main className="page">
+        <div className="notice notice-error">Could not verify administrator access: {access.message}</div>
+      </main>
+    );
+  }
+
+  return <Outlet />;
+}
+
+function AppLayout() {
+  return (
+    <div className="app-shell">
+      <Navbar />
+      <Outlet />
+      <BottomNav />
+    </div>
+  );
+}
+
+export default function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/messages" element={<MessagesPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile/settings" element={<SettingsPage />} />
+          <Route path="/profile/wallet" element={<HostWalletPage />} />
+          <Route path="/profile/invite" element={<InvitePage />} />
+          <Route path="/profile/face-verify" element={<FaceVerifyPage />} />
+          <Route path="/profile/recharge" element={<RechargePage />} />
+          <Route path="/games/dice" element={<DiceGamePage />} />
+          <Route path="/live/:roomId" element={<LiveRoomPage />} />
+        </Route>
+      </Route>
+      <Route element={<ProtectedRoute adminOnly />}>
+        <Route path="/admin" element={<AdminDashboard />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
