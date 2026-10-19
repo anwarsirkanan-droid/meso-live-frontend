@@ -4,6 +4,7 @@ import { getProfile } from '../api.js';
 import BottomNav from '../components/BottomNav.jsx';
 import Navbar from '../components/Navbar.jsx';
 import AdminDashboard from '../pages/AdminDashboard.jsx';
+import AgencyCenterPage from '../pages/AgencyCenterPage.jsx';
 import DiceGamePage from '../pages/DiceGamePage.jsx';
 import FaceVerifyPage from '../pages/FaceVerifyPage.jsx';
 import HomePage from '../pages/HomePage.jsx';
@@ -118,6 +119,7 @@ export default function AppRoutes() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/settings" element={<SettingsPage />} />
           <Route path="/profile/wallet" element={<HostWalletPage />} />
+          <Route path="/profile/agency" element={<AgencyCenterPage />} />
           <Route path="/profile/invite" element={<InvitePage />} />
           <Route path="/profile/face-verify" element={<FaceVerifyPage />} />
           <Route path="/profile/recharge" element={<RechargePage />} />

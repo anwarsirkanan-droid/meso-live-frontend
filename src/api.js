@@ -27,6 +27,8 @@ export const checkUsernameAvailability = (username) =>
   API.get('/users/username-availability', { params: { username } }).then(dataFrom);
 export const saveProfileSetup = (profile) =>
   API.put('/users/profile', profile).then(dataFrom);
+export const updateProfileAvatar = (avatar) =>
+  API.put('/users/avatar', { avatar }).then(dataFrom);
 export const getRooms = () => API.get('/room/all').then(dataFrom);
 export const createRoom = (room) => API.post('/room/create', room).then(dataFrom);
 export const getRoom = (roomId) => API.get(`/room/${roomId}`).then(dataFrom);
@@ -47,6 +49,9 @@ export const acceptInvite = (code) => API.post('/invite/accept', { code }).then(
 export const getWalletBalance = () => API.get('/wallet/balance').then(dataFrom);
 export const requestWithdraw = (request) => API.post('/withdraw/request', request).then(dataFrom);
 export const getWithdrawalHistory = () => API.get('/withdraw/mine').then(dataFrom);
+export const getHostDailyTasks = () => API.get('/task/host-daily').then(dataFrom);
+export const claimHostDailyTask = (taskId) =>
+  API.post(`/task/host-daily/${taskId}/claim`).then(dataFrom);
 export const getAgencyCenter = () => API.get('/agency/center').then(dataFrom);
 export const getAgencyCommission = () => API.get('/agency/commission').then(dataFrom);
 export const getAgencyHostRevenue = (period = '30d') =>
