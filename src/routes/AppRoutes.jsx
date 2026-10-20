@@ -20,6 +20,7 @@ import ProfileSetup from '../pages/ProfileSetup.jsx';
 import RechargePage from '../pages/RechargePage.jsx';
 import Register from '../pages/Register.jsx';
 import SettingsPage from '../pages/SettingsPage.jsx';
+import { EditProfilePage, FollowersPage, FollowingPage, GiftHistoryPage, InvitePageView, MyStreamsPage, WithdrawalPage } from '../pages/ProfileUtilityPages.jsx';
 
 function ProtectedRoute({ adminOnly = false, allowIncomplete = false }) {
   const location = useLocation();
@@ -201,6 +202,13 @@ export default function AppRoutes() {
           <Route path="/profile/invite" element={<InvitePage />} />
           <Route path="/profile/face-verify" element={<FaceVerifyPage />} />
           <Route path="/profile/recharge" element={<RechargePage />} />
+          <Route path="/profile/edit" element={<EditProfilePage />} />
+          <Route path="/profile/followers" element={<FollowersPage />} />
+          <Route path="/profile/following" element={<FollowingPage />} />
+          <Route path="/profile/streams" element={<MyStreamsPage />} />
+          <Route path="/profile/gifts" element={<GiftHistoryPage />} />
+          <Route path="/profile/withdrawal" element={<WithdrawalPage />} />
+          <Route path="/profile/invite-new" element={<InvitePageView />} />
           <Route path="/games/dice" element={<DiceGamePage />} />
           <Route element={<ProtectedRoute adminOnly />}>
             <Route path="/admin" element={<AdminDashboard />} />

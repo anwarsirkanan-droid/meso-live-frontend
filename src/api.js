@@ -62,6 +62,14 @@ export const generateInvite = () => API.post('/invite/generate').then(dataFrom);
 export const acceptInvite = (code) => API.post('/invite/accept', { code }).then(dataFrom);
 export const getWalletBalance = () => API.get('/wallet/balance').then(dataFrom);
 export const requestWithdraw = (request) => API.post('/withdraw/request', request).then(dataFrom);
+export const getWallet = () => API.get('/wallet/me').then(dataFrom);
+export const getLevels = () => API.get('/level/me').then(dataFrom);
+export const getMyRoom = () => API.get('/room/my-room').then(dataFrom);
+export const updateProfile = (profile) => API.put('/users/profile', profile).then(dataFrom);
+export const getFollowers = () => API.get('/users/followers').then(dataFrom);
+export const getFollowing = () => API.get('/users/following').then(dataFrom);
+export const followUser = (userId) => API.post('/users/follow', { userId }).then(dataFrom);
+export const unfollowUser = (userId) => API.post('/users/unfollow', { userId }).then(dataFrom);
 export const getWithdrawalHistory = () => API.get('/withdraw/mine').then(dataFrom);
 export const getHostDailyTasks = () => API.get('/task/host-daily').then(dataFrom);
 export const claimHostDailyTask = (taskId) =>

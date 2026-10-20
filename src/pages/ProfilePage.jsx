@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Camera } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { createRoom, getProfile, getHostDailyTasks, getMyHostTarget, claimHostDailyTask, updateProfileAvatar } from '../api.js';
+import { createRoom, getProfile, getHostDailyTasks, getMyHostTarget, claimHostDailyTask, updateProfileAvatar, getWallet, getLevels, getMyRoom } from '../api.js';
+import ProfileHeader from '../components/ProfileHeader.jsx';
+import WalletCards from '../components/WalletCards.jsx';
+import GridMenu from '../components/GridMenu.jsx';
+import ListMenu from '../components/ListMenu.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import VerificationBadge from '../components/VerificationBadge.jsx';
 import { Card, ErrorMessage, Field, Loading, Page, PageLink } from '../components/UI.jsx';
@@ -147,6 +151,8 @@ export default function ProfilePage() {
   const [roomBanner, setRoomBanner] = useState('');
   const [roomError, setRoomError] = useState('');
   const [creatingRoom, setCreatingRoom] = useState(false);
+  const [wallet, setWallet] = useState(null);
+  const [levels, setLevels] = useState(null);
 
   const loadHostTasks = useCallback(() => {
     getHostDailyTasks()
@@ -174,6 +180,19 @@ export default function ProfilePage() {
       active = false;
     };
   }, [user?.hasActiveRoom, user?.roomId]);
+
+  useEffect(() => {
+    let active = true;
+    Promise.all([getWallet().catch(() => null), getLevels().catch(() => null)])
+      .then(([walletData, levelData]) => { if (active) { setWallet(walletData); setLevels(levelData); } });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (profile?.role !== 'HOST') return undefined;
+    getMyRoom().then((roomData) => setProfile((current) => current ? { ...current, room: roomData?.room || roomData } : current)).catch(() => {});
+    return undefined;
+  }, [profile?.role]);
 
   useEffect(() => {
     if (profile?.role !== 'HOST') return undefined;
@@ -281,6 +300,14 @@ export default function ProfilePage() {
 
   return (
     <Page title="My profile" eyebrow="YOUR MESO LIVE ACCOUNT">
+      <ProfileHeader profile={profile} onCopy={async (value) => { try { await navigator.clipboard.writeText(value); } catch { setCopyStatus('Could not copy Meso Live ID.'); } }} />
+      {profile && <WalletCards wallet={wallet || profile} levels={levels || profile} />}
+      <GridMenu />
+      <ListMenu />
+      {profile?.role === 'USER' && <Card className="role-menu-card"><h2>Become a Host</h2><p className="muted">Apply to host live rooms and earn diamonds.</p><button className="button button-primary" type="button" onClick={() => navigate('/host-application')}>Become a Host</button></Card>}
+      {profile?.role === 'HOST' && <Card className="role-menu-card"><h2>Host tools</h2><button className="button button-primary" type="button" onClick={() => navigate(profile.room?`/live/${encodeURIComponent(String(profile.room._id || profile.room.id))}`:'/host-application')}>Go Live</button><button className="button button-secondary" type="button" onClick={() => navigate('/agent-application')}>Become an Agent</button></Card>}
+      {profile?.role === 'AGENT' && <Card className="role-menu-card"><h2>Agency Center</h2><button className="button button-primary" type="button" onClick={() => navigate('/profile/agency')}>Open Agency Center</button></Card>}
+      {profile?.role === 'ADMIN' && <Card className="role-menu-card"><h2>Review Applications</h2><button className="button button-primary" type="button" onClick={() => navigate('/admin')}>Review Applications</button></Card>}
       <Card className="profile-card">
         <label className={`profile-avatar-control${uploadingAvatar ? ' is-uploading' : ''}`}>
           <span className="profile-avatar">
