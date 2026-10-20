@@ -93,5 +93,10 @@ export const recharge = (packageId, customer) =>
 export const verifyPayment = (transactionRef) =>
   API.get(`/payment/verify/${encodeURIComponent(transactionRef)}`).then(dataFrom);
 export const playGame = (game) => API.post('/game/play', game).then(dataFrom);
+export const getTaskCenter = () => API.get('/tasks').then(dataFrom);
+export const claimTask = (taskId) => API.post(`/tasks/${encodeURIComponent(taskId)}/claim`).then(dataFrom);
+export const claimMicReward = () => API.post('/rewards/claim-mic').then(dataFrom);
+export const claimCrownReward = () => API.post('/rewards/claim-crown').then(dataFrom);
+export const claimWelcomeReward = () => API.post('/rewards/claim-welcome').then(dataFrom);
 
 export default API;
