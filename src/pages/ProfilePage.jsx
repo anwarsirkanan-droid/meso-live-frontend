@@ -45,15 +45,7 @@ export default function ProfilePage() {
     }
   };
 
-  const roleAction = profile?.role === 'USER'
-    ? <Card className="role-menu-card"><h2>Become a Host</h2><p className="muted">Apply to host live rooms and earn diamonds.</p><button className="button button-primary" type="button" onClick={() => navigate('/host-application')}>Become a Host</button></Card>
-    : profile?.role === 'AGENT'
-      ? <Card className="role-menu-card"><h2>Agency Center</h2><button className="button button-primary" type="button" onClick={() => navigate('/profile/agency')}>Open Agency Center</button></Card>
-      : profile?.role === 'HOST'
-        ? <Card className="role-menu-card"><h2>Host tools</h2><button className="button button-primary" type="button" onClick={() => navigate('/host-application')}>Go Live</button><button className="button button-secondary" type="button" onClick={() => navigate('/agent-application')}>Become an Agent</button></Card>
-        : profile?.role === 'ADMIN'
-          ? <Card className="role-menu-card"><h2>Review Applications</h2><button className="button button-primary" type="button" onClick={() => navigate('/admin')}>Review Applications</button></Card>
-          : null;
+  const roleAction = <Card className="role-menu-card"><h2>Become a Host</h2><p className="muted">Apply to host live rooms and earn diamonds.</p><button className="button button-primary" type="button" onClick={() => navigate('/host-application')}>Become a Host</button></Card>;
 
   return (
     <Page title="My profile" eyebrow="YOUR MESO LIVE ACCOUNT">
