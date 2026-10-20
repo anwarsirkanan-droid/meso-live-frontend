@@ -1,4 +1,4 @@
-import { Copy, Pencil } from 'lucide-react';
+import { ChevronRight, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const number = (value) => (Number(value) || 0).toLocaleString();
@@ -6,21 +6,43 @@ const number = (value) => (Number(value) || 0).toLocaleString();
 export default function ProfileHeader({ profile, onCopy }) {
   const navigate = useNavigate();
   if (!profile) return null;
+
   const picture = profile.profilePicture || profile.avatar || profile.picture;
   const publicId = String(profile.publicId || profile.userId || profile._id || profile.id || '');
-  const role = String(profile.role || 'USER').toUpperCase();
+  const role = String(profile.role || '').toUpperCase();
+  const displayName = profile.fullName || profile.name || profile.username || 'Meso Live member';
+  const genderAge = [profile.gender, profile.age ? `${profile.age}` : ''].filter(Boolean).join(' · ') || 'Gender / Age';
+  const wealthLevel = profile.wealthLevel?.level || profile.wealthLevel || 1;
+  const charmLevel = profile.charmLevel?.level || profile.charmLevel || 1;
+  const editProfile = () => navigate('/profile/edit');
+
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      editProfile();
+    }
+  };
+
   return (
     <section className="profile-header card">
-      <div className="profile-header-content">
-        <button className="profile-header-avatar" type="button" onClick={() => navigate('/profile/edit')} aria-label="Change profile picture">
+      <div className="profile-header-content" role="button" tabIndex="0" onClick={editProfile} onKeyDown={handleKeyDown} aria-label="Edit profile">
+        <span className="profile-header-avatar">
           {picture ? <img src={picture} alt="" /> : <span>{profile.username?.[0]?.toUpperCase() || 'M'}</span>}
-          <small>Change</small>
-        </button>
+        </span>
         <div className="profile-header-main">
-          <div className="profile-header-title"><div><p className="eyebrow">YOUR MESO LIVE PROFILE</p><h2>@{profile.username || 'member'}</h2><p className="muted">{profile.fullName || profile.name || profile.email || 'Meso Live member'}</p></div><button className="button button-quiet button-small" type="button" onClick={() => navigate('/profile/edit')}><Pencil size={14} /> Edit Profile</button></div>
-          <div className="profile-badges"><span className={`role-badge role-${role.toLowerCase()}`}>{role}</span><span className="level-badge">Wealth Lv.{profile.wealthLevel?.level || profile.wealthLevel || 1}</span><span className="level-badge">Charm Lv.{profile.charmLevel?.level || profile.charmLevel || 1}</span></div>
-          <div className="profile-id-row"><span>Meso Live ID: <strong>{publicId || 'Not assigned'}</strong></span>{publicId && <button className="button button-quiet button-small" type="button" onClick={() => onCopy(publicId)}><Copy size={14} /> Copy</button>}</div>
+          <h2 className="profile-display-name">{displayName}</h2>
+          <div className="profile-badges" aria-label="Profile badges">
+            <span className="profile-pill">{genderAge}</span>
+            <span className="profile-pill">Wealth Lv {wealthLevel}</span>
+            <span className="profile-pill">Charm Lv {charmLevel}</span>
+            {role === 'AGENT' && <span className="profile-pill profile-agency-badge">AGENCY</span>}
+          </div>
+          <div className="profile-id-row">
+            <span>ID: <strong>{publicId || 'Not assigned'}</strong></span>
+            {publicId && <button className="profile-copy-button" type="button" aria-label="Copy user ID" onClick={(event) => { event.stopPropagation(); onCopy(publicId); }}><Copy size={13} /></button>}
+          </div>
         </div>
+        <ChevronRight className="profile-header-arrow" size={22} aria-hidden="true" />
       </div>
       <div className="profile-follow-stats" aria-label="Social stats">
         <button type="button" onClick={() => navigate('/profile/followers')}><strong>{number(profile.followersCount ?? profile.followers?.length)}</strong><span>Followed</span></button>
