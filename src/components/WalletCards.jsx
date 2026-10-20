@@ -8,8 +8,14 @@ export default function WalletCards({ wallet }) {
   const navigate = useNavigate();
   const coins = valueOf(wallet, 'coins');
   const diamonds = valueOf(wallet, 'diamonds');
-  return <section className="wallet-cards">
-    <Card className="wallet-balance-card"><div><p className="eyebrow">COINS</p><h3>{number(coins)}</h3></div><button className="button button-primary" type="button" onClick={() => navigate('/profile/recharge')}>Top Up</button></Card>
-    <Card className="wallet-balance-card"><div><p className="eyebrow">DIAMONDS</p><h3>{number(diamonds)}</h3></div><button className="button button-secondary" type="button" onClick={() => navigate('/profile/wallet')}>View</button></Card>
-  </section>;
+  return <Card className="wallet-cards">
+    <div className="wallet-balance-card">
+      <div><p className="eyebrow">COINS</p><h3>{number(coins)}</h3></div>
+      <button className="button button-primary" type="button" onClick={() => navigate('/profile/recharge')}>Top Up</button>
+    </div>
+    <div className="wallet-balance-card">
+      <div><p className="eyebrow">DIAMONDS</p><h3>{number(diamonds)}</h3></div>
+      <button className="button button-secondary" type="button" onClick={() => navigate('/profile/wallet')}>View</button>
+    </div>
+  </Card>;
 }

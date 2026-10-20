@@ -446,9 +446,9 @@ button { color: inherit; }
 .profile-follow-stats > div:last-child { border-right: 0; }
 .profile-follow-stats button { cursor: pointer; }
 .profile-follow-stats span { color: var(--muted); font-size: 10px; }
-.wallet-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
-.wallet-cards .wallet-progress-card { grid-column: 1 / -1; display: grid; gap: 16px; }
+.wallet-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; margin-top: 14px; }
 .wallet-balance-card { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.wallet-balance-card + .wallet-balance-card { padding-left: 18px; border-left: 1px solid var(--border); }
 .wallet-balance-card h3 { margin: 5px 0 0; font: 800 24px Manrope; }
 .wallet-level { display: grid; gap: 7px; }
 .wallet-level > div:first-child { display: flex; justify-content: space-between; font-size: 12px; }
@@ -466,7 +466,7 @@ button { color: inherit; }
 .user-list-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); }
 .user-list-row strong, .user-list-row span { flex: 1; }
 .list-avatar { width: 34px; height: 34px; display: grid; flex: 0 0 34px; place-items: center; border-radius: 50%; color: white; background: var(--accent); }
-@media (max-width: 560px) { .profile-header-content { gap: 10px; } .profile-header-avatar { width: 62px; height: 62px; flex-basis: 62px; } .profile-display-name { font-size: 19px; } .profile-badges { gap: 4px; } .profile-pill { padding: 3px 6px; font-size: 9px; } .wallet-cards { grid-template-columns: 1fr; } .role-menu-card { align-items: flex-start; flex-direction: column; } }
+@media (max-width: 560px) { .profile-header-content { gap: 10px; } .profile-header-avatar { width: 62px; height: 62px; flex-basis: 62px; } .profile-display-name { font-size: 19px; } .profile-badges { gap: 4px; } .profile-pill { padding: 3px 6px; font-size: 9px; } .wallet-balance-card { gap: 6px; flex-direction: column; align-items: flex-start; } .wallet-balance-card + .wallet-balance-card { padding-left: 12px; } .role-menu-card { align-items: flex-start; flex-direction: column; } }
 @media (min-width: 700px) {
   .page { padding-top: 44px; }
   .page-heading h1 { font-size: 34px; }
