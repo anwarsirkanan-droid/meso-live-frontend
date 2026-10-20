@@ -1,7 +1,7 @@
-import { Crown, Gift, Mic, Sparkles } from 'lucide-react';
+import { Crown, Mic } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { claimCrownReward, claimMicReward, claimTask, claimWelcomeReward, getTaskCenter } from '../api.js';
+import { claimCrownReward, claimMicReward, claimTask, getTaskCenter } from '../api.js';
 import { Card, Loading, Page } from '../components/UI.jsx';
 
 const formatNumber = (value) => (Number(value) || 0).toLocaleString();
@@ -115,7 +115,6 @@ export default function TaskCenterScreen({ initialTab = 'daily' }) {
         <div className="host-task-center">
           <HostRewardCard icon={Mic} iconColor="#9ecbff" iconBackground="#233c63" title="On Mic Reward" description={isNewHost ? 'New host reward · Days 1–7' : 'Existing host reward · Day 8+'} rewardLabel={micRewardLabel} completed={hostReward.micSeconds >= 3600} claimed={hostReward.micClaimed} claiming={claiming === 'mic'} onClaim={() => runClaim('mic', claimMicReward)} onGo={goToHostRoom} progress={{ label: 'Live Duration (min)', value: Math.floor((hostReward.micSeconds || 0) / 60), target: 60 }} />
           <HostRewardCard icon={Crown} iconColor="#f5d47b" iconBackground="#59461d" title="Crown Mic Reward" description="Stay on crown mic for 60 minutes." rewardLabel={crownRewardLabel} completed={hostReward.crownSeconds >= 3600} claimed={hostReward.crownClaimed} claiming={claiming === 'crown'} onClaim={() => runClaim('crown', claimCrownReward)} onGo={goToHostRoom} progress={{ label: 'Live Duration (min)', value: Math.floor((hostReward.crownSeconds || 0) / 60), target: 60 }} />
-          <HostRewardCard icon={data.hostRewards?.welcomeClaimed ? Sparkles : Gift} iconColor="#d7b6ff" iconBackground="#452a66" title="Welcome Reward" description="Claim your host welcome bonus once." rewardLabel={hostReward.welcomeRewardLabel} completed={!hostReward.welcomeClaimed} claimed={hostReward.welcomeClaimed} claiming={claiming === 'welcome'} onClaim={() => runClaim('welcome', claimWelcomeReward)} onGo={goToHostRoom} progress={{ label: 'Gift Points in last 7 Days', value: hostReward.giftPointsLast7Days || 0, target: hostReward.giftPointsTarget || 500000 }} />
           <Card title="Host Task Levels" className="host-levels-card"><div className="host-levels-table"><div className="host-levels-row host-levels-heading"><span>Level</span><span>Target (7d)</span><span>Reward/H</span><span>Max H</span><span>Total</span></div>{(data.hostLevels || []).map((level) => <div className="host-levels-row" key={level.level}><span>{level.level}</span><span>{level.targetHours}</span><span>{level.rewardPerHour}</span><span>{level.maxHours}</span><span>{level.totalReward}</span></div>)}</div></Card>
         </div>
       )}
