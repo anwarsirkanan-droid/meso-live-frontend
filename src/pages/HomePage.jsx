@@ -98,7 +98,17 @@ export default function HomePage() {
   const ownRoomId = user?.roomId ? String(user.roomId) : '';
 
   const ownRoom = useMemo(() => {
-    if (!ownRoomId) return null;
+    if (!ownRoomId) {
+      return {
+        _id: 'default-host-room',
+        title: 'My Host Room',
+        category: 'Chat',
+        country: user?.country,
+        isLive: false,
+        isDefaultHostRoom: true,
+        host: { username: user?.username, avatar: user?.avatar || user?.profilePicture, country: user?.country },
+      };
+    }
     const host = user.room?.host || (
       user.room?.ownerId && typeof user.room.ownerId === 'object' ? user.room.ownerId : null
     ) || {
@@ -212,7 +222,7 @@ export default function HomePage() {
   }, [ownRoom, ownRoomId, rooms]);
 
   const openGoLive = () => {
-    if (user?.role === 'HOST') {
+    if (user?.isHost === true || user?.role === 'HOST') {
       if (ownRoomId) {
         navigate(`/live/${encodeURIComponent(ownRoomId)}`);
       } else {
@@ -282,11 +292,15 @@ export default function HomePage() {
           </span>
           <strong>{listeners}</strong>
         </div>
-        {pinned && (
+        {pinned && (room.isDefaultHostRoom ? (
+          <button className="button button-primary room-card-action" type="button" onClick={openGoLive}>
+            Go Live
+          </button>
+        ) : (
           <Link className="button button-primary room-card-action" to={`/live/${encodeURIComponent(roomId)}`}>
             {live ? 'Join Room' : 'Go Live'}
           </Link>
-        )}
+        ))}
         {!pinned && (
           <Link className="room-card-hit" to={`/live/${encodeURIComponent(roomId)}`} aria-label={`Join ${roomName}`} />
         )}
@@ -336,7 +350,7 @@ export default function HomePage() {
 
       {displayedRooms.length > 0 && (
         <div className="room-grid">
-          {displayedRooms.map((room) => renderRoomCard(room, roomIdOf(room) === ownRoomId))}
+          {displayedRooms.map((room) => renderRoomCard(room, room.isDefaultHostRoom || roomIdOf(room) === ownRoomId))}
         </div>
       )}
 

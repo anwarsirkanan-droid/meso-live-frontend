@@ -105,7 +105,9 @@ function attachPersistentRoom(userData, previousUser = getStoredUser(false)) {
 
 function getStoredUser(withRoom = true) {
   const user = readJson('user');
-  return withRoom ? attachPersistentRoom(user) : user;
+  if (!user) return user;
+  const hostUser = { ...user, isHost: user.isHost ?? true };
+  return withRoom ? attachPersistentRoom(hostUser) : hostUser;
 }
 
 export const AuthContext = createContext(null);
@@ -125,7 +127,7 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(localStorage.getItem('token') || null);
 
   const login = (userData, userToken) => {
-    const nextUser = attachPersistentRoom(userData);
+    const nextUser = attachPersistentRoom({ ...(userData || {}), isHost: userData?.isHost ?? true });
     setUser(nextUser);
     setToken(userToken);
     localStorage.setItem('token', userToken);
@@ -134,7 +136,7 @@ export function AuthProvider({ children }) {
 
   const updateUser = useCallback((updates) => {
     setUser((current) => persistUser(
-      attachPersistentRoom({ ...(current || {}), ...updates }, current),
+      attachPersistentRoom({ ...(current || {}), ...updates, isHost: updates?.isHost ?? current?.isHost ?? true }, current),
     ));
   }, []);
 
