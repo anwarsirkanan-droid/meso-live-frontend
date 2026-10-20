@@ -1,4 +1,8 @@
+import { Navigate, useParams } from 'react-router-dom';
+
 function Room() {
-  return <h1>Room Page</h1>;
+  const { roomId } = useParams();
+  return <Navigate to={`/live/${encodeURIComponent(roomId)}`} replace />;
 }
+
 export default Room;

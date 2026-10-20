@@ -7,6 +7,9 @@ export default function Home() {
   const [rooms, setRooms] = useState([]);
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const openRoom = (roomId) => {
+    if (roomId) navigate(`/live/${encodeURIComponent(String(roomId))}`);
+  };
 
   useEffect(() => {
     API.get('/room')
@@ -29,6 +32,11 @@ export default function Home() {
       </header>
 
       <main style={{ marginTop: '30px' }}>
+        {user?.hasActiveRoom && user?.roomId && (
+          <button onClick={() => openRoom(user.roomId)}>
+            🎙️ Enter My Room
+          </button>
+        )}
         <h3>Live Audio Rooms (25 Seats Available)</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '20px', marginTop: '15px' }}>
           {rooms.length === 0 ? (
@@ -38,8 +46,8 @@ export default function Home() {
               <div key={room._id} style={{ background: '#1e1e2d', padding: '20px', borderRadius: '8px', border: '1px solid #333' }}>
                 <h4 style={{ margin: '0 0 10px 0' }}>{room.name}</h4>
                 <p style={{ fontSize: '13px', color: '#aaa', marginBottom: '15px' }}>Seats: {room.seats?.length || 0}/25</p>
-                <button 
-                  onClick={() => navigate(`/room/${room._id}`)} 
+                <button
+                  onClick={() => openRoom(room._id)}
                   style={{ background: '#e91e63', color: '#fff', border: 'none', padding: '8px 14px', borderRadius: '4px', cursor: 'pointer', width: '100%' }}
                 >
                   Join Room

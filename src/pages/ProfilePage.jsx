@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Camera } from 'lucide-react';
-import { getProfile, getHostDailyTasks, claimHostDailyTask, updateProfileAvatar } from '../api.js';
+import { useNavigate } from 'react-router-dom';
+import { createRoom, getProfile, getHostDailyTasks, claimHostDailyTask, updateProfileAvatar } from '../api.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 import VerificationBadge from '../components/VerificationBadge.jsx';
-import { Card, Loading, Page, PageLink } from '../components/UI.jsx';
+import { Card, ErrorMessage, Field, Loading, Page, PageLink } from '../components/UI.jsx';
 
 const formatPoints = (points) => (Number(points) || 0).toLocaleString();
 const formatPublicId = (value) => {
@@ -129,6 +131,8 @@ function HostTaskCard({ task, busy, onClaim }) {
 }
 
 export default function ProfilePage() {
+  const navigate = useNavigate();
+  const { user, updateUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [hostTasks, setHostTasks] = useState(null);
   const [error, setError] = useState('');
@@ -137,6 +141,11 @@ export default function ProfilePage() {
   const [claimingTask, setClaimingTask] = useState('');
   const [avatarError, setAvatarError] = useState('');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [roomTitle, setRoomTitle] = useState('');
+  const [roomCategory, setRoomCategory] = useState('For You');
+  const [roomBanner, setRoomBanner] = useState('');
+  const [roomError, setRoomError] = useState('');
+  const [creatingRoom, setCreatingRoom] = useState(false);
 
   const loadHostTasks = useCallback(() => {
     getHostDailyTasks()
@@ -150,7 +159,12 @@ export default function ProfilePage() {
     let active = true;
     getProfile()
       .then((data) => {
-        if (active) setProfile(data);
+        if (active) {
+          setProfile({
+            ...data,
+            ...(user?.hasActiveRoom ? { hasActiveRoom: true, roomId: user.roomId } : {}),
+          });
+        }
       })
       .catch((requestError) => {
         if (active) setError(requestError.response?.data?.message || requestError.message);
@@ -158,7 +172,7 @@ export default function ProfilePage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [user?.hasActiveRoom, user?.roomId]);
 
   useEffect(() => {
     if (profile?.role !== 'HOST') return undefined;
@@ -208,6 +222,30 @@ export default function ProfilePage() {
       setTaskError(claimError.response?.data?.message || claimError.message || 'Could not claim this reward.');
     } finally {
       setClaimingTask('');
+    }
+  };
+
+  const setupRoom = async (event) => {
+    event.preventDefault();
+    setRoomError('');
+    setCreatingRoom(true);
+    try {
+      const result = await createRoom({
+        title: roomTitle.trim(),
+        category: roomCategory,
+        banner: roomBanner.trim(),
+      });
+      const room = result?.room || result;
+      const roomId = room?._id || room?.id;
+      if (!roomId) throw new Error('The server did not return the created room ID.');
+      const updatedProfile = { ...profile, hasActiveRoom: true, roomId: String(roomId) };
+      setProfile(updatedProfile);
+      updateUser(updatedProfile);
+      navigate(`/live/${encodeURIComponent(String(roomId))}`);
+    } catch (requestError) {
+      setRoomError(requestError.response?.data?.message || requestError.response?.data?.error || requestError.message);
+    } finally {
+      setCreatingRoom(false);
     }
   };
 
@@ -265,6 +303,57 @@ export default function ProfilePage() {
           <LevelCard title="WEALTH LEVEL" icon="🏅" level={profile.wealthLevel} />
           <LevelCard title="CHARM LEVEL" icon="✨" level={profile.charmLevel} />
         </div>
+      )}
+
+      {isHost && (
+        profile.hasActiveRoom && profile.roomId ? (
+          <Card className="profile-room-setup">
+            <p className="eyebrow">YOUR HOST ROOM</p>
+            <h2>Room setup complete</h2>
+            <p className="muted">Your room ID is {profile.roomId}. Your room stays available from Home.</p>
+            <button
+              className="button button-primary"
+              type="button"
+              onClick={() => navigate(`/live/${encodeURIComponent(String(profile.roomId))}`)}
+            >
+              Enter My Room
+            </button>
+          </Card>
+        ) : (
+          <Card className="profile-room-setup">
+            <p className="eyebrow">HOST TOOLS</p>
+            <h2>Set up your room</h2>
+            <p className="muted">Create your room once. You can return to it anytime from Home.</p>
+            <form className="form-stack" onSubmit={setupRoom}>
+              <Field
+                label="Room name"
+                type="text"
+                maxLength={100}
+                required
+                value={roomTitle}
+                onChange={(event) => setRoomTitle(event.target.value)}
+              />
+              <label className="field">
+                <span>Category</span>
+                <select value={roomCategory} onChange={(event) => setRoomCategory(event.target.value)}>
+                  {['For You', 'Party', 'Music', 'Chat', 'Ethiopia'].map((category) => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+              </label>
+              <Field
+                label="Cover image URL (optional)"
+                type="url"
+                value={roomBanner}
+                onChange={(event) => setRoomBanner(event.target.value)}
+              />
+              <ErrorMessage>{roomError}</ErrorMessage>
+              <button className="button button-primary" type="submit" disabled={creatingRoom}>
+                {creatingRoom ? 'Creating room…' : 'Create my room'}
+              </button>
+            </form>
+          </Card>
+        )
       )}
 
       {isHost && (

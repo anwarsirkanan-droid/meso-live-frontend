@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, Outlet, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { getProfile } from '../api.js';
 import BottomNav from '../components/BottomNav.jsx';
 import Navbar from '../components/Navbar.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 import AdminDashboard from '../pages/AdminDashboard.jsx';
 import AgencyCenterPage from '../pages/AgencyCenterPage.jsx';
 import DiceGamePage from '../pages/DiceGamePage.jsx';
@@ -22,6 +23,7 @@ import SettingsPage from '../pages/SettingsPage.jsx';
 function ProtectedRoute({ adminOnly = false, allowIncomplete = false }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { updateUser } = useAuth();
   const token = localStorage.getItem('token');
   const [retry, setRetry] = useState(0);
   const [access, setAccess] = useState({ status: 'loading', token });
@@ -37,7 +39,22 @@ function ProtectedRoute({ adminOnly = false, allowIncomplete = false }) {
     getProfile()
       .then((data) => {
         if (active) {
-          setAccess({ status: 'loaded', token, profile: data });
+          const storedUser = (() => {
+            try {
+              return JSON.parse(localStorage.getItem('user') || '{}');
+            } catch {
+              return {};
+            }
+          })();
+          const profile = {
+            ...data,
+            ...(storedUser.hasActiveRoom ? {
+              hasActiveRoom: true,
+              roomId: storedUser.roomId,
+            } : {}),
+          };
+          updateUser(profile);
+          setAccess({ status: 'loaded', token, profile });
         }
       })
       .catch((error) => {
@@ -52,7 +69,7 @@ function ProtectedRoute({ adminOnly = false, allowIncomplete = false }) {
     return () => {
       active = false;
     };
-  }, [token, retry]);
+  }, [token, retry, updateUser]);
 
   if (!token) return <Navigate to="/login" replace state={{ from: location }} />;
   if (access.token !== token || access.status === 'loading') {
@@ -95,13 +112,70 @@ function ProtectedRoute({ adminOnly = false, allowIncomplete = false }) {
 }
 
 function AppLayout() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [activeRoomId, setActiveRoomId] = useState(() => {
+    const routeMatch = location.pathname.match(/^\/live\/([^/]+)/);
+    if (routeMatch) return decodeURIComponent(routeMatch[1]);
+    try {
+      return localStorage.getItem('mesoLive.activeRoomId') || '';
+    } catch {
+      return '';
+    }
+  });
+  const [minimized, setMinimized] = useState(false);
+
+  useEffect(() => {
+    const routeMatch = location.pathname.match(/^\/live\/([^/]+)/);
+    if (!routeMatch) return;
+    const roomId = decodeURIComponent(routeMatch[1]);
+    setActiveRoomId(roomId);
+    setMinimized(false);
+    localStorage.setItem('mesoLive.activeRoomId', roomId);
+  }, [location.pathname]);
+
+  const isRoomRoute = Boolean(activeRoomId) &&
+    location.pathname === `/live/${encodeURIComponent(activeRoomId)}`;
+  const closeRoom = () => {
+    setActiveRoomId('');
+    setMinimized(false);
+    localStorage.removeItem('mesoLive.activeRoomId');
+    if (isRoomRoute) navigate('/', { replace: true });
+  };
+
   return (
     <div className="app-shell">
       <Navbar />
       <Outlet />
       <BottomNav />
+      {activeRoomId && (
+        <LiveRoomPage
+          key={activeRoomId}
+          roomId={activeRoomId}
+          isMinimized={!isRoomRoute || minimized}
+          onMinimize={() => {
+            setMinimized(true);
+            if (isRoomRoute) navigate('/', { replace: true });
+          }}
+          onRestore={() => {
+            setMinimized(false);
+            navigate(`/live/${encodeURIComponent(activeRoomId)}`);
+          }}
+          onClose={closeRoom}
+        />
+      )}
     </div>
   );
+}
+
+function LiveRoomRoute() {
+  const { roomId } = useParams();
+  return <div className="live-room-route-placeholder" data-room-id={roomId} />;
+}
+
+function LegacyRoomRedirect() {
+  const { roomId } = useParams();
+  return <Navigate to={`/live/${encodeURIComponent(roomId)}`} replace />;
 }
 
 export default function AppRoutes() {
@@ -113,8 +187,9 @@ export default function AppRoutes() {
         <Route path="/profile-setup" element={<ProfileSetup />} />
       </Route>
       <Route element={<ProtectedRoute />}>
-          <Route path="/live/:roomId" element={<LiveRoomPage />} />
-          <Route element={<AppLayout />}>
+        <Route element={<AppLayout />}>
+          <Route path="/room/:roomId" element={<LegacyRoomRedirect />} />
+          <Route path="/live/:roomId" element={<LiveRoomRoute />} />
           <Route path="/" element={<HomePage />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/profile" element={<ProfilePage />} />
@@ -125,10 +200,10 @@ export default function AppRoutes() {
           <Route path="/profile/face-verify" element={<FaceVerifyPage />} />
           <Route path="/profile/recharge" element={<RechargePage />} />
           <Route path="/games/dice" element={<DiceGamePage />} />
+          <Route element={<ProtectedRoute adminOnly />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+          </Route>
         </Route>
-      </Route>
-      <Route element={<ProtectedRoute adminOnly />}>
-        <Route path="/admin" element={<AdminDashboard />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

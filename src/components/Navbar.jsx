@@ -5,6 +5,8 @@ export default function Navbar() {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('mesoLive.activeRoomId');
     navigate('/login', { replace: true });
   };
 

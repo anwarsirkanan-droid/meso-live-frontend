@@ -32,8 +32,10 @@ export default function GoogleAuthButton({ onSuccess, onError, onLoading }) {
         onSuccess={handleSuccess}
         onError={() => onError('Google sign-in could not be started. Check the Google client ID and try again.')}
         text="continue_with"
-        shape="pill"
-        width="320"
+        theme="filled_black"
+        shape="rectangular"
+        size="large"
+        width="350"
       />
     </div>
   );

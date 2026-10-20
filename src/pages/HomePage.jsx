@@ -1,82 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { io } from 'socket.io-client';
-import { createRoom, getRooms } from '../api.js';
-import { Card, ErrorMessage, Field, Page } from '../components/UI.jsx';
+import { getRooms } from '../api.js';
+import { Card, Page } from '../components/UI.jsx';
 import { API_URL } from '../config.js';
-
-const CATEGORIES = ['Follow', 'Party', 'For You', 'Ethiopia', 'Rank'];
-
-function RoomCreateDialog({ onClose, onCreated }) {
-  const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('For You');
-  const [banner, setBanner] = useState('');
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
-
-  const submit = async (event) => {
-    event.preventDefault();
-    setError('');
-    setBusy(true);
-    try {
-      const result = await createRoom({ title, category, banner });
-      const room = result?.room || result;
-      if (!room?._id) throw new Error('The server did not return the created room.');
-      onCreated(room);
-    } catch (requestError) {
-      setError(requestError.response?.data?.message || requestError.message);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div className="room-create-overlay" role="presentation" onMouseDown={(event) => {
-      if (event.target === event.currentTarget && !busy) onClose();
-    }}>
-      <section className="card room-create-dialog" role="dialog" aria-modal="true" aria-labelledby="create-room-title">
-        <div className="section-heading room-create-heading">
-          <h2 id="create-room-title">Create a live room</h2>
-          <button className="button button-quiet button-small" type="button" onClick={onClose} disabled={busy}>
-            Close
-          </button>
-        </div>
-        <form className="form-stack" onSubmit={submit}>
-          <Field
-            label="Room name"
-            type="text"
-            required
-            maxLength={100}
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-          />
-          <label className="field">
-            <span>Category</span>
-            <select value={category} onChange={(event) => setCategory(event.target.value)}>
-              {CATEGORIES.map((item) => <option key={item} value={item}>{item}</option>)}
-            </select>
-          </label>
-          <Field
-            label="Cover image URL (optional)"
-            type="url"
-            value={banner}
-            onChange={(event) => setBanner(event.target.value)}
-          />
-          <ErrorMessage>{error}</ErrorMessage>
-          <button className="button button-primary button-full" type="submit" disabled={busy}>
-            {busy ? 'Creating room…' : 'Create Room'}
-          </button>
-        </form>
-      </section>
-    </div>
-  );
-}
+import { useAuth } from '../../context/AuthContext.jsx';
 
 export default function HomePage() {
+  const { user } = useAuth();
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const inactiveRoomIds = useRef(new Set());
 
   useEffect(() => {
@@ -139,36 +73,23 @@ export default function HomePage() {
     };
   }, []);
 
-  const addCreatedRoom = async () => {
-    setShowCreateDialog(false);
-    try {
-      const data = await getRooms();
-      setRooms(Array.isArray(data) ? data : []);
-      setError('');
-    } catch (requestError) {
-      setError(requestError.response?.data?.message || 'Room was created, but the live host list could not be refreshed.');
-    }
-  };
+  const ownRoomId = user?.hasActiveRoom && user?.roomId ? String(user.roomId) : '';
 
   return (
     <Page
       title="Good evening"
       eyebrow="YOUR LIVE COMMUNITY"
-      actions={(
-        <button
-          className="button button-primary"
-          type="button"
-          onClick={() => setShowCreateDialog(true)}
-        >
-          Create Room
-        </button>
-      )}
     >
       <section className="hero-card">
         <div>
-          <p className="eyebrow">YOUR NEXT CONVERSATION STARTS HERE</p>
-          <h2>Find your people.<br />Join the moment.</h2>
-          <p className="muted">Drop into a live room and make a new connection.</p>
+          <p className="eyebrow">{ownRoomId ? 'YOUR LIVE ROOM IS READY' : 'YOUR NEXT CONVERSATION STARTS HERE'}</p>
+          <h2>{ownRoomId ? <>Your room.<br />Your community.</> : <>Find your people.<br />Join the moment.</>}</h2>
+          <p className="muted">{ownRoomId ? 'Jump back in and reconnect with your listeners.' : 'Drop into a live room and make a new connection.'}</p>
+          {ownRoomId && (
+            <Link className="button button-primary home-own-room" to={`/live/${encodeURIComponent(ownRoomId)}`}>
+              🎙️ Enter My Room
+            </Link>
+          )}
         </div>
         <span className="hero-art" aria-hidden="true">🎙️</span>
       </section>
@@ -190,13 +111,7 @@ export default function HomePage() {
       {!loading && !error && rooms.length === 0 && (
         <Card className="rooms-empty-state">
           <p>No live hosts yet</p>
-          <button
-            className="button button-primary"
-            type="button"
-            onClick={() => setShowCreateDialog(true)}
-          >
-            Create Room
-          </button>
+          <Link className="button button-secondary" to="/profile">Visit your profile</Link>
         </Card>
       )}
 
@@ -229,8 +144,8 @@ export default function HomePage() {
                   <p className="muted">
                     {room.category} · {memberCount} listening · {room.isLive ? 'Live' : 'Offline'}
                   </p>
-                  <Link className="button button-primary button-full" to={`/live/${room._id}`}>
-                    Join voice room
+                  <Link className="button button-primary button-full" to={`/live/${encodeURIComponent(room._id)}`}>
+                    {String(room._id) === ownRoomId ? 'Go to Room' : 'Join voice room'}
                   </Link>
                 </div>
               </Card>
@@ -244,12 +159,6 @@ export default function HomePage() {
         <Link className="button button-secondary" to="/games/dice">Open Game Center <span aria-hidden="true">→</span></Link>
       </Card>
 
-      {showCreateDialog && (
-        <RoomCreateDialog
-          onClose={() => setShowCreateDialog(false)}
-          onCreated={addCreatedRoom}
-        />
-      )}
     </Page>
   );
 }
