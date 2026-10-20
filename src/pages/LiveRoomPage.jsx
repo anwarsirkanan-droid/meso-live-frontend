@@ -9,6 +9,7 @@ import {
   sendGift,
   takeRoomSeat,
 } from '../api.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 import socket from '../socket.js';
 
 const GIFT_CATEGORIES = ['Hot', 'Lucky', 'Luxury', 'Intimacy'];
@@ -68,6 +69,7 @@ export default function LiveRoomPage({
   onRestore = () => {},
   onClose = () => {},
 }) {
+  const { updateRoomStatus } = useAuth();
   const [room, setRoom] = useState(null);
   const [profile, setProfile] = useState(null);
   const [gifts, setGifts] = useState([]);
@@ -108,9 +110,12 @@ export default function LiveRoomPage({
   const disconnectingRef = useRef(false);
   const roomActiveRef = useRef(true);
   const requestRoomJoinRef = useRef(null);
+  const hostRef = useRef(false);
   const handlePlaybackBlocked = useCallback(() => setPlaybackBlocked(true), []);
-  const isHost = String(profile?._id || profile?.id || '') ===
-    String(room?.ownerId?._id || room?.ownerId?.id || room?.ownerId || '');
+  const isHost = Boolean(profile && room?.ownerId) &&
+    String(profile._id || profile.id || '') ===
+      String(room.ownerId?._id || room.ownerId?.id || room.ownerId || '');
+  hostRef.current = isHost;
 
   useEffect(() => {
     setAnnouncement(localStorage.getItem(`room:${roomId}:announcement`) || '');
@@ -173,7 +178,11 @@ export default function LiveRoomPage({
 
   useEffect(() => {
     const onRoomUpdated = (updatedRoom) => {
-      if (String(updatedRoom?._id) === String(roomId)) setRoom(updatedRoom);
+      if (String(updatedRoom?._id) !== String(roomId)) return;
+      setRoom(updatedRoom);
+      if (hostRef.current && typeof updatedRoom.isLive === 'boolean') {
+        updateRoomStatus(roomId, updatedRoom.isLive);
+      }
     };
     const onGiftReceived = (gift) => {
       setGiftFeed((current) => [gift, ...current].slice(0, 5));
@@ -184,7 +193,7 @@ export default function LiveRoomPage({
       socket.off('room_updated', onRoomUpdated);
       socket.off('gift_received', onGiftReceived);
     };
-  }, [roomId]);
+  }, [roomId, updateRoomStatus]);
 
   useEffect(() => {
     roomActiveRef.current = true;
@@ -371,6 +380,7 @@ export default function LiveRoomPage({
           return;
         }
         setStatus('connected');
+        if (hostRef.current) updateRoomStatus(roomId, true);
       });
     };
     requestRoomJoinRef.current = requestRoomJoin;
@@ -482,6 +492,7 @@ export default function LiveRoomPage({
   };
 
   const leaveRoom = () => {
+    if (hostRef.current) updateRoomStatus(roomId, false);
     disconnectingRef.current = true;
     if (socket.connected) {
       socket.emit('leave-room', roomId);
@@ -733,6 +744,7 @@ export default function LiveRoomPage({
         </div>
         <div className="live-room-header-right">
           <div className="live-room-stats">
+            <span>👥 {Number(room?.membersCount) || 0} listening</span>
             <span>🪙 {(Number(room?.totalCoins || room?.coins) || 0).toLocaleString()} room coins</span>
             <span><Gamepad2 size={15} /> {Number(room?.miniGamesCount) || 0} games</span>
           </div>
@@ -799,6 +811,49 @@ export default function LiveRoomPage({
 
       {!loading && room && (
         <>
+          <div className="live-room-layout">
+            <section className="card room-seats-panel" aria-labelledby="room-seats-title">
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">TAKE THE FLOOR</p>
+                  <h2 id="room-seats-title">Mic seats</h2>
+                </div>
+                <span className="count-badge">{roomSeats.filter((seat) => seat.userId).length} / 25</span>
+              </div>
+              <p className="muted room-panel-hint">Tap an open seat to join the conversation. Tap your seat to leave it.</p>
+              {roomActionError && <p className="form-error" role="alert">{roomActionError}</p>}
+              <div className="mic-seat-grid">
+                {roomSeats.map((seat) => {
+                  const user = seat.userId && typeof seat.userId === 'object' ? seat.userId : null;
+                  const seatUserId = String(user?._id || user?.id || seat.userId || '');
+                  const occupied = Boolean(seatUserId);
+                  const isMine = occupied && seatUserId === currentUserId;
+                  const crown = seat.isCrownMic === true || seat.seatIndex < 4;
+                  const disabled = roomActionBusy || (occupied && !isMine) || (seat.isLocked && !isMine);
+                  const seatLabel = user?.username || (isMine ? 'You' : 'Occupied');
+                  return (
+                    <button
+                      className={`mic-seat${occupied ? ' is-occupied' : ''}${isMine ? ' is-mine' : ''}${crown ? ' is-crown' : ''}${seat.isLocked ? ' is-locked' : ''}`}
+                      key={seat.seatIndex}
+                      type="button"
+                      onClick={() => changeSeat(seat)}
+                      disabled={disabled || !currentUserId}
+                      aria-label={`${crown ? 'Crown mic, ' : ''}Mic ${seat.seatIndex + 1}, ${occupied ? seatLabel : seat.isLocked ? 'locked' : 'available'}`}
+                      title={crown ? 'Crown Mic' : `Mic ${seat.seatIndex + 1}`}
+                    >
+                      <span className="mic-seat-icon" aria-hidden="true">{crown ? <Crown size={17} /> : occupied ? '🎙️' : '+'}</span>
+                      <span className="mic-seat-name">{occupied ? seatLabel : `Mic ${seat.seatIndex + 1}`}</span>
+                      {crown && <span className="mic-seat-popularity" aria-label="VIP popular seat">🔥</span>}
+                      {seat.isLocked && <span className="mic-seat-lock" aria-label="Locked">🔒</span>}
+                    </button>
+                  );
+                })}
+              </div>
+              {ownSeat && (
+                <p className="muted room-panel-hint">You are on {ownSeat.isCrownMic ? 'the Crown Mic' : `Mic ${ownSeat.seatIndex + 1}`}.</p>
+              )}
+            </section>
+          </div>
           <section className="room-announcement card">
             <div className="room-announcement-heading">
               <div>
@@ -843,59 +898,6 @@ export default function LiveRoomPage({
               </form>
             )}
           </section>
-          <div className="live-room-layout">
-            <section className="card room-seats-panel" aria-labelledby="room-seats-title">
-              <div className="section-heading">
-                <div>
-                  <p className="eyebrow">TAKE THE FLOOR</p>
-                  <h2 id="room-seats-title">Mic seats</h2>
-                </div>
-                <span className="count-badge">{roomSeats.filter((seat) => seat.userId).length} / 25</span>
-              </div>
-              <p className="muted room-panel-hint">Tap an open seat to join the conversation. Tap your seat to leave it.</p>
-              {roomActionError && <p className="form-error" role="alert">{roomActionError}</p>}
-              <div className="mic-seat-grid">
-                {roomSeats.map((seat) => {
-                  const user = seat.userId && typeof seat.userId === 'object' ? seat.userId : null;
-                  const seatUserId = String(user?._id || user?.id || seat.userId || '');
-                  const occupied = Boolean(seatUserId);
-                  const isMine = occupied && seatUserId === currentUserId;
-                  const crown = seat.isCrownMic === true || seat.seatIndex < 4;
-                  const disabled = roomActionBusy || (occupied && !isMine) || (seat.isLocked && !isMine);
-                  const seatLabel = user?.username || (isMine ? 'You' : 'Occupied');
-                  return (
-                    <button
-                      className={`mic-seat${occupied ? ' is-occupied' : ''}${isMine ? ' is-mine' : ''}${crown ? ' is-crown' : ''}${seat.isLocked ? ' is-locked' : ''}`}
-                      key={seat.seatIndex}
-                      type="button"
-                      onClick={() => changeSeat(seat)}
-                      disabled={disabled || !currentUserId}
-                      aria-label={`${crown ? 'Crown mic, ' : ''}Mic ${seat.seatIndex + 1}, ${occupied ? seatLabel : seat.isLocked ? 'locked' : 'available'}`}
-                      title={crown ? 'Crown Mic' : `Mic ${seat.seatIndex + 1}`}
-                    >
-                      <span className="mic-seat-icon" aria-hidden="true">{crown ? <Crown size={17} /> : occupied ? '🎙️' : '+'}</span>
-                      <span className="mic-seat-name">{occupied ? seatLabel : `Mic ${seat.seatIndex + 1}`}</span>
-                      {crown && <span className="mic-seat-popularity" aria-label="VIP popular seat">🔥</span>}
-                      {seat.isLocked && <span className="mic-seat-lock" aria-label="Locked">🔒</span>}
-                    </button>
-                  );
-                })}
-              </div>
-              {ownSeat && (
-                <p className="muted room-panel-hint">You are on {ownSeat.isCrownMic ? 'the Crown Mic' : `Mic ${ownSeat.seatIndex + 1}`}.</p>
-              )}
-            </section>
-
-            <aside className="card room-gifts-panel" aria-labelledby="room-gifts-title">
-              <p className="eyebrow">SHOW SOME LOVE</p>
-              <h2 id="room-gifts-title">Room gift store</h2>
-              <p className="muted">Choose a gift and send it to a speaker or all occupied mic seats.</p>
-              <span className="count-badge">{(Number(profile?.coins) || 0).toLocaleString()} coins</span>
-              <button className="button button-primary button-full room-gift-open" type="button" onClick={() => setGiftsOpen(true)}>
-                <Gift size={17} /> Open gift store
-              </button>
-            </aside>
-          </div>
           <section className="card room-chat-panel" aria-labelledby="room-chat-title">
             <div className="section-heading">
               <div>

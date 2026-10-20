@@ -10,6 +10,11 @@ function getStoredUser() {
 
 export const AuthContext = createContext(null);
 
+function persistUser(nextUser) {
+  localStorage.setItem('user', JSON.stringify(nextUser));
+  return nextUser;
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(getStoredUser);
   const [token, setToken] = useState(localStorage.getItem('token') || null);
@@ -28,9 +33,53 @@ export function AuthProvider({ children }) {
   const updateUser = useCallback((updates) => {
     setUser((current) => {
       const next = { ...(current || {}), ...updates };
-      localStorage.setItem('user', JSON.stringify(next));
-      return next;
+      return persistUser(next);
     });
+  }, []);
+
+  const updateRoom = useCallback((roomData) => {
+    const roomId = String(roomData?._id || roomData?.id || roomData?.roomId || '');
+    if (!roomId) throw new Error('A room ID is required to save room details.');
+    const room = {
+      ...roomData,
+      _id: roomId,
+      title: roomData.title || roomData.name || '',
+      isLive: roomData.isLive === true || String(roomData.status).toLowerCase() === 'live',
+    };
+    setUser((current) => persistUser({
+      ...(current || {}),
+      hasActiveRoom: true,
+      roomId,
+      roomName: room.title,
+      roomStatus: room.isLive ? 'live' : 'offline',
+      room,
+    }));
+    window.dispatchEvent(new CustomEvent('mesolive-room-updated', { detail: room }));
+  }, []);
+
+  const updateRoomStatus = useCallback((roomId, isLive) => {
+    if (!roomId) return;
+    const normalizedId = String(roomId);
+    setUser((current) => {
+      if (String(current?.roomId || '') !== normalizedId) return current;
+      const room = {
+        ...(current.room || {}),
+        _id: normalizedId,
+        title: current.roomName || current.room?.title || '',
+        isLive: Boolean(isLive),
+      };
+      return persistUser({
+        ...current,
+        hasActiveRoom: true,
+        roomId: normalizedId,
+        roomName: room.title,
+        roomStatus: isLive ? 'live' : 'offline',
+        room,
+      });
+    });
+    window.dispatchEvent(new CustomEvent('mesolive-room-status-changed', {
+      detail: { roomId: normalizedId, isLive: Boolean(isLive) },
+    }));
   }, []);
 
   const logout = () => {
@@ -42,7 +91,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, updateUser, logout }}>
+    <AuthContext.Provider value={{ user, token, login, updateUser, updateRoom, updateRoomStatus, logout }}>
       {children}
     </AuthContext.Provider>
   );

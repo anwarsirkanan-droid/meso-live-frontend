@@ -132,7 +132,7 @@ function HostTaskCard({ task, busy, onClaim }) {
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { user, updateUser } = useAuth();
+  const { user, updateUser, updateRoom } = useAuth();
   const [profile, setProfile] = useState(null);
   const [hostTasks, setHostTasks] = useState(null);
   const [error, setError] = useState('');
@@ -238,9 +238,28 @@ export default function ProfilePage() {
       const room = result?.room || result;
       const roomId = room?._id || room?.id;
       if (!roomId) throw new Error('The server did not return the created room ID.');
-      const updatedProfile = { ...profile, hasActiveRoom: true, roomId: String(roomId) };
+      const createdRoom = {
+        ...room,
+        _id: String(roomId),
+        title: room.title || room.name || roomTitle.trim(),
+        ownerId: room.ownerId || {
+          _id: profile._id || profile.id,
+          username: profile.username,
+          avatar: profile.avatar || profile.profilePicture,
+        },
+        isLive: room.isLive === true,
+      };
+      const updatedProfile = {
+        ...profile,
+        hasActiveRoom: true,
+        roomId: String(roomId),
+        roomName: createdRoom.title,
+        roomStatus: createdRoom.isLive ? 'live' : 'offline',
+        room: createdRoom,
+      };
       setProfile(updatedProfile);
       updateUser(updatedProfile);
+      updateRoom(createdRoom);
       navigate(`/live/${encodeURIComponent(String(roomId))}`);
     } catch (requestError) {
       setRoomError(requestError.response?.data?.message || requestError.response?.data?.error || requestError.message);

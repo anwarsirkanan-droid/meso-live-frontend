@@ -260,7 +260,7 @@ button { color: inherit; }
 .live-room-connection.is-reconnecting { color: #e8bc67; }
 .live-room-header-controls { flex-wrap: wrap; justify-content: flex-end; margin-top: 0; }
 .live-room-header-controls .room-mic-meter { flex-basis: 100%; margin: 0 0 0 auto; }
-.live-room-layout { grid-template-columns: minmax(0, 1.5fr) minmax(260px, 1fr); gap: 14px; align-items: start; }
+.live-room-layout { grid-template-columns: minmax(0, 1fr); gap: 14px; align-items: start; }
 .host-orb { width: 132px; height: 132px; display: grid; place-items: center; margin: 26px 0 15px; border: 5px solid #7449b8; border-radius: 50%; background: linear-gradient(145deg, #b68aff, #5832a0); box-shadow: 0 0 55px #8a55d955; font-size: 55px; }
 .room-controls { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 28px; }
 .room-mic-meter { width: min(220px, 80%); height: 6px; margin-top: 13px; overflow: hidden; border-radius: 99px; background: var(--border); }
@@ -295,6 +295,19 @@ button { color: inherit; }
 .profile-room-setup > .muted { margin: 0 0 16px; font-size: 12px; }
 .profile-room-setup .form-stack { max-width: 520px; }
 .home-own-room { margin-top: 15px; }
+.home-pinned-room { margin-bottom: 14px; }
+.room-card.is-pinned-room { border-color: color-mix(in srgb, var(--accent) 62%, var(--border)); background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, var(--surface)), var(--surface) 65%); }
+.room-card-status { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; color: var(--muted); font-size: 10px; }
+.room-status-badge { display: inline-flex; align-items: center; padding: 4px 7px; border-radius: 99px; font-size: 9px; font-weight: 800; letter-spacing: .4px; }
+.room-status-badge.is-live { color: #83e5ad; background: #173c2a; }
+.room-status-badge.is-offline { color: #b6b1c0; background: #302c36; }
+.home-go-live-fab { position: fixed; z-index: 15; right: 16px; bottom: 84px; width: 60px; height: 60px; display: grid; place-content: center; justify-items: center; gap: 1px; border: 0; border-radius: 50%; color: #fff; background: linear-gradient(145deg, #8c45ef, #e044a3); box-shadow: 0 8px 24px #8c45ef66, 0 3px 9px #0006; cursor: pointer; font-size: 9px; font-weight: 800; transition: transform .15s ease, box-shadow .15s ease; }
+.home-go-live-fab:hover { transform: translateY(-2px); box-shadow: 0 11px 28px #8c45ef88, 0 3px 9px #0006; }
+.host-application-dialog { position: relative; width: min(100%, 420px); padding: 28px; }
+.host-application-dialog h2 { margin: 0 0 10px; font: 800 22px/1.2 Manrope; }
+.host-application-dialog > .muted { margin: 0; font-size: 13px; line-height: 1.6; }
+.host-application-close { position: absolute; top: 10px; right: 10px; }
+.host-application-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 20px; }
 .live-room-header { align-items: flex-start; }
 .live-room-host-identity { display: flex; align-items: center; gap: 13px; }
 .live-room-host-avatar { width: 54px; height: 54px; display: grid; flex: 0 0 54px; place-items: center; border: 2px solid #6841a6; border-radius: 50%; object-fit: cover; }
@@ -318,7 +331,6 @@ button { color: inherit; }
 .mic-seat-popularity { position: absolute; top: 5px; right: 5px; font-size: 10px; }
 .room-gifts-panel > h2 { margin: 0 0 8px; font: 700 18px Manrope; }
 .room-gifts-panel > .muted { margin: 0 0 12px; font-size: 11px; line-height: 1.5; }
-.room-gift-open { margin-top: 14px; }
 .room-chat-panel { margin-top: 14px; }
 .room-chat-panel .section-heading { margin: 0 0 12px; }
 .room-chat-panel .section-heading h2 { margin: 0; font: 700 17px Manrope; }
@@ -351,7 +363,7 @@ button { color: inherit; }
 .room-gift-modal .room-gift-grid { max-height: 220px; }
 .room-mini-control { min-height: 35px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 10px; color: var(--text); background: var(--surface-raised); cursor: pointer; font-size: 10px; font-weight: 700; white-space: nowrap; }
 .room-mini-control:disabled { opacity: .45; cursor: not-allowed; }
-.live-room-page.is-minimized { position: fixed; z-index: 40; inset: auto 15px 82px auto; width: min(100% - 30px, 390px); height: auto; min-height: 0; padding: 0; overflow: visible; background: transparent; }
+.live-room-page.is-minimized { position: fixed; z-index: 40; inset: auto auto 82px 15px; width: min(100% - 100px, 390px); height: auto; min-height: 0; padding: 0; overflow: visible; background: transparent; }
 .live-room-page.is-minimized > :not(.live-room-background-bar):not(.remote-room-audio-list) { display: none !important; }
 .live-room-background-bar { display: flex; align-items: center; gap: 8px; padding: 10px; border: 1px solid #6841a6; border-radius: 16px; background: color-mix(in srgb, var(--surface) 96%, transparent); box-shadow: 0 12px 36px #0009; backdrop-filter: blur(18px); }
 .live-room-background-dot { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: var(--muted); }
@@ -408,7 +420,7 @@ button { color: inherit; }
   .room-bottom-chat .button { min-height: 38px; padding: 8px 10px; }
   .room-floating-widgets { right: 7px; bottom: 119px; }
   .room-floating-widgets a, .room-floating-widgets button { min-height: 33px; padding: 7px 9px; font-size: 9px; }
-  .live-room-page.is-minimized { right: 8px; bottom: 75px; width: calc(100% - 16px); }
+  .live-room-page.is-minimized { right: auto; bottom: 75px; left: 8px; width: calc(100% - 92px); }
   .live-room-background-bar { gap: 6px; padding: 8px; }
   .live-room-background-status { display: none; }
   .room-mini-control { min-height: 32px; padding: 5px 8px; }
