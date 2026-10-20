@@ -21,13 +21,13 @@ function TaskRow({ task, onClaim, claiming }) {
   );
 }
 
-function HostRewardCard({ title, description, reward, claimable, claimed, claiming, onClaim }) {
-  return <Card className="host-reward-card"><div><p className="eyebrow">HOST REWARD</p><h3>{title}</h3><p className="muted">{description}</p><strong>{reward}</strong></div><button className="button button-primary button-small" type="button" disabled={!claimable || claimed || claiming} onClick={onClaim}>{claimed ? 'Claimed ✓' : claiming ? 'Claiming…' : 'Claim'}</button></Card>;
+function HostRewardCard({ title, description, rewardLabel, buttonText, claimable, claimed, claiming, onClaim }) {
+  return <Card className="host-reward-card"><div><p className="eyebrow">HOST REWARD</p><h3>{title}</h3><p className="muted">{description}</p><strong>{rewardLabel}</strong></div><button className="button button-primary button-small" type="button" disabled={!claimable || claimed || claiming} onClick={onClaim}>{claimed ? 'Claimed ✓' : claiming ? 'Claiming…' : buttonText}</button></Card>;
 }
 
-export default function TaskCenterScreen() {
+export default function TaskCenterScreen({ initialTab = 'daily' }) {
   const [data, setData] = useState(null);
-  const [tab, setTab] = useState('daily');
+  const [tab, setTab] = useState(initialTab);
   const [claiming, setClaiming] = useState('');
   const [error, setError] = useState('');
 
@@ -36,6 +36,10 @@ export default function TaskCenterScreen() {
 
   const isHost = data?.role === 'HOST' || data?.role === 'AGENT';
   const currentTasks = useMemo(() => data?.[tab === 'daily' ? 'dailyTasks' : 'weeklyTasks'] || [], [data, tab]);
+
+  useEffect(() => {
+    if (data && !isHost && tab === 'host') setTab('daily');
+  }, [data, isHost, tab]);
 
   const runClaim = async (key, action) => {
     setClaiming(key);
@@ -61,9 +65,9 @@ export default function TaskCenterScreen() {
       </div>
       {tab !== 'host' ? <Card title={`${tab[0].toUpperCase()} tasks`} className="task-list-card">{currentTasks.length ? currentTasks.map((task) => <TaskRow key={task.id || task._id} task={task} claiming={claiming === (task.id || task._id)} onClaim={(id) => runClaim(id, () => claimTask(id))} />) : <p className="muted">No tasks available.</p>}</Card> : (
         <div className="host-task-center">
-          <HostRewardCard title="On Mic Reward" description="Stay on mic for 60 minutes." reward="$0.90 / day" claimable={data.hostRewards?.micSeconds >= 3600} claimed={data.hostRewards?.micClaimed} claiming={claiming === 'mic'} onClaim={() => runClaim('mic', claimMicReward)} />
-          <HostRewardCard title="Crown Mic Reward" description="Stay on crown mic for 60 minutes." reward="3,000 diamonds / day" claimable={data.hostRewards?.crownSeconds >= 3600} claimed={data.hostRewards?.crownClaimed} claiming={claiming === 'crown'} onClaim={() => runClaim('crown', claimCrownReward)} />
-          <HostRewardCard title="Welcome Reward" description="Claim your host welcome bonus once." reward={formatNumber(data.hostRewards?.welcomeReward || 0) + ' coins'} claimable={!data.hostRewards?.welcomeClaimed} claimed={data.hostRewards?.welcomeClaimed} claiming={claiming === 'welcome'} onClaim={() => runClaim('welcome', claimWelcomeReward)} />
+          <HostRewardCard title="On Mic Reward" description="Stay on mic for 60 minutes." rewardLabel={data.hostRewards?.micRewardLabel} buttonText={data.hostRewards?.micBtnText} claimable={data.hostRewards?.micSeconds >= 3600} claimed={data.hostRewards?.micClaimed} claiming={claiming === 'mic'} onClaim={() => runClaim('mic', claimMicReward)} />
+          <HostRewardCard title="Crown Mic Reward" description="Stay on crown mic for 60 minutes." rewardLabel={data.hostRewards?.crownRewardLabel} buttonText={data.hostRewards?.crownBtnText} claimable={data.hostRewards?.crownSeconds >= 3600} claimed={data.hostRewards?.crownClaimed} claiming={claiming === 'crown'} onClaim={() => runClaim('crown', claimCrownReward)} />
+          <HostRewardCard title="Welcome Reward" description="Claim your host welcome bonus once." rewardLabel={data.hostRewards?.welcomeRewardLabel} buttonText={data.hostRewards?.welcomeBtnText} claimable={!data.hostRewards?.welcomeClaimed} claimed={data.hostRewards?.welcomeClaimed} claiming={claiming === 'welcome'} onClaim={() => runClaim('welcome', claimWelcomeReward)} />
           <Card title="Host Task Levels" className="host-levels-card"><div className="host-levels-table"><div className="host-levels-row host-levels-heading"><span>Level</span><span>Target (7d)</span><span>Reward/H</span><span>Max H</span><span>Total</span></div>{(data.hostLevels || []).map((level) => <div className="host-levels-row" key={level.level}><span>{level.level}</span><span>{level.targetHours}</span><span>{level.rewardPerHour}</span><span>{level.maxHours}</span><span>{level.totalReward}</span></div>)}</div></Card>
         </div>
       )}

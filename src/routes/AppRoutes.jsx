@@ -18,6 +18,7 @@ import MessagesPage from '../pages/MessagesPage.jsx';
 import ProfilePage from '../pages/ProfilePage.jsx';
 import LevelDetailsPage from '../pages/LevelDetailsPage.jsx';
 import TaskCenterScreen from '../screens/TaskCenterScreen.js';
+import HostRewardsScreen from '../screens/HostRewardsScreen.js';
 import ProfileSetup from '../pages/ProfileSetup.jsx';
 import RechargePage from '../pages/RechargePage.jsx';
 import Register from '../pages/Register.jsx';
@@ -199,6 +200,7 @@ export default function AppRoutes() {
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/levels" element={<LevelDetailsPage />} />
           <Route path="/tasks" element={<TaskCenterScreen />} />
+          <Route path="/host-rewards" element={<HostRewardsScreen />} />
           <Route path="/profile/settings" element={<SettingsPage />} />
           <Route path="/profile/wallet" element={<HostWalletPage />} />
           <Route path="/profile/agency" element={<AgencyCenterPage />} />
