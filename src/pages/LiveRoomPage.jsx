@@ -69,7 +69,7 @@ export default function LiveRoomPage({
   onRestore = () => {},
   onClose = () => {},
 }) {
-  const { updateRoomStatus } = useAuth();
+  const { updateRoom, updateRoomStatus } = useAuth();
   const [room, setRoom] = useState(null);
   const [profile, setProfile] = useState(null);
   const [gifts, setGifts] = useState([]);
@@ -116,6 +116,14 @@ export default function LiveRoomPage({
     String(profile._id || profile.id || '') ===
       String(room.ownerId?._id || room.ownerId?.id || room.ownerId || '');
   hostRef.current = isHost;
+
+  useEffect(() => {
+    if (!isHost || !room) return;
+    updateRoom({
+      ...room,
+      isLive: status === 'connected' || status === 'reconnecting',
+    });
+  }, [isHost, room, status, updateRoom]);
 
   useEffect(() => {
     setAnnouncement(localStorage.getItem(`room:${roomId}:announcement`) || '');
@@ -810,50 +818,48 @@ export default function LiveRoomPage({
       </div>
 
       {!loading && room && (
-        <>
-          <div className="live-room-layout">
-            <section className="card room-seats-panel" aria-labelledby="room-seats-title">
-              <div className="section-heading">
-                <div>
-                  <p className="eyebrow">TAKE THE FLOOR</p>
-                  <h2 id="room-seats-title">Mic seats</h2>
-                </div>
-                <span className="count-badge">{roomSeats.filter((seat) => seat.userId).length} / 25</span>
+        <div className="live-room-flow">
+          <section className="card room-seats-panel" aria-labelledby="room-seats-title">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">TAKE THE FLOOR</p>
+                <h2 id="room-seats-title">Voice seats</h2>
               </div>
-              <p className="muted room-panel-hint">Tap an open seat to join the conversation. Tap your seat to leave it.</p>
-              {roomActionError && <p className="form-error" role="alert">{roomActionError}</p>}
-              <div className="mic-seat-grid">
-                {roomSeats.map((seat) => {
-                  const user = seat.userId && typeof seat.userId === 'object' ? seat.userId : null;
-                  const seatUserId = String(user?._id || user?.id || seat.userId || '');
-                  const occupied = Boolean(seatUserId);
-                  const isMine = occupied && seatUserId === currentUserId;
-                  const crown = seat.isCrownMic === true || seat.seatIndex < 4;
-                  const disabled = roomActionBusy || (occupied && !isMine) || (seat.isLocked && !isMine);
-                  const seatLabel = user?.username || (isMine ? 'You' : 'Occupied');
-                  return (
-                    <button
-                      className={`mic-seat${occupied ? ' is-occupied' : ''}${isMine ? ' is-mine' : ''}${crown ? ' is-crown' : ''}${seat.isLocked ? ' is-locked' : ''}`}
-                      key={seat.seatIndex}
-                      type="button"
-                      onClick={() => changeSeat(seat)}
-                      disabled={disabled || !currentUserId}
-                      aria-label={`${crown ? 'Crown mic, ' : ''}Mic ${seat.seatIndex + 1}, ${occupied ? seatLabel : seat.isLocked ? 'locked' : 'available'}`}
-                      title={crown ? 'Crown Mic' : `Mic ${seat.seatIndex + 1}`}
-                    >
-                      <span className="mic-seat-icon" aria-hidden="true">{crown ? <Crown size={17} /> : occupied ? '🎙️' : '+'}</span>
-                      <span className="mic-seat-name">{occupied ? seatLabel : `Mic ${seat.seatIndex + 1}`}</span>
-                      {crown && <span className="mic-seat-popularity" aria-label="VIP popular seat">🔥</span>}
-                      {seat.isLocked && <span className="mic-seat-lock" aria-label="Locked">🔒</span>}
-                    </button>
-                  );
-                })}
-              </div>
-              {ownSeat && (
-                <p className="muted room-panel-hint">You are on {ownSeat.isCrownMic ? 'the Crown Mic' : `Mic ${ownSeat.seatIndex + 1}`}.</p>
-              )}
-            </section>
-          </div>
+              <span className="count-badge">{roomSeats.filter((seat) => seat.userId).length} / 25</span>
+            </div>
+            <p className="muted room-panel-hint">Tap an open seat to join the conversation. Tap your seat to leave it.</p>
+            {roomActionError && <p className="form-error" role="alert">{roomActionError}</p>}
+            <div className="mic-seat-grid">
+              {roomSeats.map((seat) => {
+                const user = seat.userId && typeof seat.userId === 'object' ? seat.userId : null;
+                const seatUserId = String(user?._id || user?.id || seat.userId || '');
+                const occupied = Boolean(seatUserId);
+                const isMine = occupied && seatUserId === currentUserId;
+                const crown = seat.isCrownMic === true || seat.seatIndex < 4;
+                const disabled = roomActionBusy || (occupied && !isMine) || (seat.isLocked && !isMine);
+                const seatLabel = user?.username || (isMine ? 'You' : 'Occupied');
+                return (
+                  <button
+                    className={`mic-seat${occupied ? ' is-occupied' : ''}${isMine ? ' is-mine' : ''}${crown ? ' is-crown' : ''}${seat.isLocked ? ' is-locked' : ''}`}
+                    key={seat.seatIndex}
+                    type="button"
+                    onClick={() => changeSeat(seat)}
+                    disabled={disabled || !currentUserId}
+                    aria-label={`${crown ? 'Crown mic, ' : ''}Mic ${seat.seatIndex + 1}, ${occupied ? seatLabel : seat.isLocked ? 'locked' : 'available'}`}
+                    title={crown ? 'Crown Mic' : `Mic ${seat.seatIndex + 1}`}
+                  >
+                    <span className="mic-seat-icon" aria-hidden="true">{crown ? <Crown size={17} /> : occupied ? '🎙️' : '+'}</span>
+                    <span className="mic-seat-name">{occupied ? seatLabel : `Mic ${seat.seatIndex + 1}`}</span>
+                    {crown && <span className="mic-seat-popularity" aria-label="VIP popular seat">🔥</span>}
+                    {seat.isLocked && <span className="mic-seat-lock" aria-label="Locked">🔒</span>}
+                  </button>
+                );
+              })}
+            </div>
+            {ownSeat && (
+              <p className="muted room-panel-hint">You are on {ownSeat.isCrownMic ? 'the Crown Mic' : `Mic ${ownSeat.seatIndex + 1}`}.</p>
+            )}
+          </section>
           <section className="room-announcement card">
             <div className="room-announcement-heading">
               <div>
@@ -902,7 +908,7 @@ export default function LiveRoomPage({
             <div className="section-heading">
               <div>
                 <p className="eyebrow">REAL-TIME ACTIVITY</p>
-                <h2 id="room-chat-title">Room chat</h2>
+                <h2 id="room-chat-title">Real-time chat</h2>
               </div>
               <span className="count-badge">{messages.length} messages</span>
             </div>
@@ -948,7 +954,7 @@ export default function LiveRoomPage({
             <Link to="/profile">🎁 Daily rewards</Link>
             <Link to="/profile">🏆 Room ranking</Link>
           </div>
-        </>
+        </div>
       )}
       {giftsOpen && (
         <div className="room-modal-overlay" role="presentation" onMouseDown={(event) => {

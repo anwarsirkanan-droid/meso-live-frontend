@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Camera } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { createRoom, getProfile, getHostDailyTasks, claimHostDailyTask, updateProfileAvatar } from '../api.js';
+import { createRoom, getProfile, getHostDailyTasks, getMyHostTarget, claimHostDailyTask, updateProfileAvatar } from '../api.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import VerificationBadge from '../components/VerificationBadge.jsx';
 import { Card, ErrorMessage, Field, Loading, Page, PageLink } from '../components/UI.jsx';
@@ -135,6 +135,7 @@ export default function ProfilePage() {
   const { user, updateUser, updateRoom } = useAuth();
   const [profile, setProfile] = useState(null);
   const [hostTasks, setHostTasks] = useState(null);
+  const [hostTarget, setHostTarget] = useState(null);
   const [error, setError] = useState('');
   const [taskError, setTaskError] = useState('');
   const [copyStatus, setCopyStatus] = useState('');
@@ -180,6 +181,12 @@ export default function ProfilePage() {
     const interval = window.setInterval(loadHostTasks, 15_000);
     return () => window.clearInterval(interval);
   }, [loadHostTasks, profile?.role]);
+
+  useEffect(() => {
+    if (profile?.role !== 'HOST') return undefined;
+    getMyHostTarget().then((data) => setHostTarget(data.target)).catch(() => setHostTarget(null));
+    return undefined;
+  }, [profile?.role]);
 
   const copyUserId = async () => {
     const publicId = formatPublicId(profile?.publicId);
@@ -375,6 +382,16 @@ export default function ProfilePage() {
         )
       )}
 
+      {isHost && hostTarget && (
+        <Card title="Monthly Target" className="host-target-card">
+          <div className="host-target-row"><span>Live Duration</span><strong>{hostTarget.liveHoursCompleted} / {hostTarget.liveHoursTarget} Hours</strong></div>
+          <div className="profile-progress-track"><span style={{ width: `${Math.min(100, (hostTarget.liveHoursCompleted / Math.max(1, hostTarget.liveHoursTarget)) * 100)}%` }} /></div>
+          <div className="host-target-row"><span>Diamonds Collected</span><strong>{formatPoints(hostTarget.diamondsEarned)} / {formatPoints(hostTarget.diamondTarget)} Diamonds</strong></div>
+          <div className="profile-progress-track"><span style={{ width: `${Math.min(100, (hostTarget.diamondsEarned / Math.max(1, hostTarget.diamondTarget)) * 100)}%` }} /></div>
+          <span className={`target-status target-status-${hostTarget.targetStatus}`}>{hostTarget.targetStatus === 'completed' ? 'Target Reached' : 'In Progress'}</span>
+        </Card>
+      )}
+
       {isHost && (
         <Card title="Daily Host Tasks" className="host-tasks-card">
           <p className="muted host-task-reset">Progress resets daily at 00:00 East Africa Time.</p>
@@ -397,7 +414,7 @@ export default function ProfilePage() {
       <Card className="link-card">
         <PageLink to="/profile/settings" icon="⚙️">Settings</PageLink>
         {isHost && <PageLink to="/profile/wallet" icon="💎">Withdraw Earnings</PageLink>}
-        {canOpenAgency && <PageLink to="/profile/agency" icon="🏢">Agency Center</PageLink>}
+        {profile?.role === 'AGENT' && <PageLink to="/profile/agency-dashboard" icon="🏢">Agency Center</PageLink>}
         <PageLink to="/profile/invite" icon="🎁">Invite friends</PageLink>
         <PageLink to="/profile/face-verify" icon="✓">Face verification</PageLink>
         <PageLink to="/profile/recharge" icon="🪙">Recharge coins</PageLink>

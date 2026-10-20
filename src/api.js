@@ -73,6 +73,8 @@ export const getAgencyHostRevenue = (period = '30d') =>
 export const getAgencySubRevenue = (period = '30d') =>
   API.get('/agency/sub-revenue', { params: { period } }).then(dataFrom);
 export const getAgencyInviteLinks = () => API.get('/agency/invite-links').then(dataFrom);
+export const getAgencyDashboard = () => API.get('/agency/dashboard').then(dataFrom);
+export const getMyHostTarget = () => API.get('/agency/host/my-target').then(dataFrom);
 export const applyForSubAgency = (application) =>
   API.post('/agency/sub-apply', application).then(dataFrom);
 export const applyForAgencyExit = (application = {}) =>
