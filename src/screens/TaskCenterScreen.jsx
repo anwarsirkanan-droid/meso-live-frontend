@@ -34,12 +34,7 @@ export default function TaskCenterScreen({ initialTab = 'daily' }) {
   const loadTasks = () => getTaskCenter().then(setData).catch((requestError) => setError(requestError.response?.data?.message || requestError.message || 'Could not load task center.'));
   useEffect(() => { loadTasks(); }, []);
 
-  const isHost = data?.role === 'HOST' || data?.role === 'AGENT';
   const currentTasks = useMemo(() => data?.[tab === 'daily' ? 'dailyTasks' : 'weeklyTasks'] || [], [data, tab]);
-
-  useEffect(() => {
-    if (data && !isHost && tab === 'host') setTab('daily');
-  }, [data, isHost, tab]);
 
   const runClaim = async (key, action) => {
     setClaiming(key);
@@ -61,7 +56,7 @@ export default function TaskCenterScreen({ initialTab = 'daily' }) {
       <div className="task-center-balance"><span>Total coins</span><strong>{formatNumber(data.coins)}</strong></div>
       {error && <p className="form-error" role="alert">{error}</p>}
       <div className="task-tabs" role="tablist" aria-label="Task categories">
-        {['daily', 'weekly', ...(isHost ? ['host'] : [])].map((item) => <button key={item} className={tab === item ? 'is-active' : ''} type="button" role="tab" aria-selected={tab === item} onClick={() => setTab(item)}>{item[0].toUpperCase() + item.slice(1)}</button>)}
+        {['daily', 'weekly', 'host'].map((item) => <button key={item} className={tab === item ? 'is-active' : ''} type="button" role="tab" aria-selected={tab === item} onClick={() => setTab(item)}>{item[0].toUpperCase() + item.slice(1)}</button>)}
       </div>
       {tab !== 'host' ? <Card title={`${tab[0].toUpperCase()} tasks`} className="task-list-card">{currentTasks.length ? currentTasks.map((task) => <TaskRow key={task.id || task._id} task={task} claiming={claiming === (task.id || task._id)} onClaim={(id) => runClaim(id, () => claimTask(id))} />) : <p className="muted">No tasks available.</p>}</Card> : (
         <div className="host-task-center">
