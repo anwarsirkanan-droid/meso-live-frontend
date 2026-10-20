@@ -23,6 +23,10 @@ export const googleLogin = (credential) =>
   API.post('/auth/google', { credential }).then(dataFrom);
 export const linkGoogleAccount = (credential) =>
   API.post('/auth/link-google', { credential }).then(dataFrom);
+export const changePassword = (passwords) =>
+  API.post('/auth/change-password', passwords).then(dataFrom);
+export const updateAccountDetails = (details) =>
+  API.put('/users/account', details).then(dataFrom);
 export const checkUsernameAvailability = (username) =>
   API.get('/users/username-availability', { params: { username } }).then(dataFrom);
 export const saveProfileSetup = (profile) =>

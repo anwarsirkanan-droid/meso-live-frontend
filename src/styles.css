@@ -272,6 +272,25 @@ button { color: inherit; }
 .setting-row select { width: auto; min-width: 118px; min-height: 38px; padding: 7px 10px; font-size: 11px; }
 .setting-row input[type='checkbox'] { width: 19px; height: 19px; accent-color: var(--accent); }
 .color-input { width: 40px; height: 34px; padding: 2px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-raised); }
+.settings-action-row { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 15px 0; border: 0; border-top: 1px solid var(--border); color: var(--text); background: transparent; text-align: left; cursor: pointer; }
+.settings-action-row:first-child { border-top: 0; }
+.settings-action-row > span:first-child { min-width: 0; display: grid; gap: 4px; }
+.settings-action-row strong { font-size: 13px; }
+.settings-action-row small { color: var(--muted); font-size: 11px; }
+.settings-action-row > span:last-child { flex: 0 0 auto; color: var(--muted); font-size: 22px; line-height: 1; }
+.settings-action-row:hover strong { color: var(--accent); }
+.settings-action-row-static { cursor: default; }
+.settings-action-row-static:hover strong { color: var(--text); }
+.settings-google-button { flex: 0 0 auto; min-height: 38px; }
+.settings-feedback { margin: 12px 0; }
+.settings-signout strong { color: var(--danger); }
+.settings-modal-overlay { position: fixed; z-index: 40; inset: 0; display: grid; place-items: center; padding: 18px; background: #09070dbb; backdrop-filter: blur(6px); }
+.settings-modal { width: min(100%, 470px); max-height: min(88dvh, 720px); overflow-y: auto; box-shadow: 0 24px 90px #0009; }
+.settings-modal-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.settings-modal-heading h2 { margin: 0; font: 700 20px Manrope, sans-serif; }
+.settings-modal-heading .button { min-width: 34px; min-height: 34px; padding: 5px; font-size: 22px; }
+.blocked-list { display: grid; gap: 8px; margin-top: 16px; }
+.blocked-list-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface-raised); font-size: 12px; }
 
 .center-card { display: grid; justify-items: center; gap: 14px; text-align: center; }
 .center-card h2 { margin: 0; font: 700 19px Manrope; }
