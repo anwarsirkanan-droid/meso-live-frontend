@@ -11,15 +11,21 @@ export default function ProfileHeader({ profile, onCopy }) {
   const role = String(profile.role || 'USER').toUpperCase();
   return (
     <section className="profile-header card">
-      <button className="profile-header-avatar" type="button" onClick={() => navigate('/profile/edit')} aria-label="Change profile picture">
-        {picture ? <img src={picture} alt="" /> : <span>{profile.username?.[0]?.toUpperCase() || 'M'}</span>}
-        <small>Change</small>
-      </button>
-      <div className="profile-header-main">
-        <div className="profile-header-title"><div><p className="eyebrow">YOUR MESO LIVE PROFILE</p><h2>@{profile.username || 'member'}</h2><p className="muted">{profile.fullName || profile.name || profile.email || 'Meso Live member'}</p></div><button className="button button-quiet button-small" type="button" onClick={() => navigate('/profile/edit')}><Pencil size={14} /> Edit Profile</button></div>
-        <div className="profile-badges"><span className={`role-badge role-${role.toLowerCase()}`}>{role}</span><span className="level-badge">Wealth Lv.{profile.wealthLevel?.level || profile.wealthLevel || 1} {profile.wealthLevel?.medal || 'Bronze'}</span><span className="level-badge">Charm Lv.{profile.charmLevel?.level || profile.charmLevel || 1} {profile.charmLevel?.medal || 'Bronze'}</span></div>
-        <div className="profile-id-row"><span>Meso Live ID: <strong>{publicId || 'Not assigned'}</strong></span>{publicId && <button className="button button-quiet button-small" type="button" onClick={() => onCopy(publicId)}><Copy size={14} /> Copy</button>}</div>
-        <div className="profile-follow-stats"><button type="button" onClick={() => navigate('/profile/followers')}><strong>{number(profile.followersCount ?? profile.followers?.length)}</strong><span>Followers</span></button><button type="button" onClick={() => navigate('/profile/following')}><strong>{number(profile.followingCount ?? profile.following?.length)}</strong><span>Following</span></button></div>
+      <div className="profile-header-content">
+        <button className="profile-header-avatar" type="button" onClick={() => navigate('/profile/edit')} aria-label="Change profile picture">
+          {picture ? <img src={picture} alt="" /> : <span>{profile.username?.[0]?.toUpperCase() || 'M'}</span>}
+          <small>Change</small>
+        </button>
+        <div className="profile-header-main">
+          <div className="profile-header-title"><div><p className="eyebrow">YOUR MESO LIVE PROFILE</p><h2>@{profile.username || 'member'}</h2><p className="muted">{profile.fullName || profile.name || profile.email || 'Meso Live member'}</p></div><button className="button button-quiet button-small" type="button" onClick={() => navigate('/profile/edit')}><Pencil size={14} /> Edit Profile</button></div>
+          <div className="profile-badges"><span className={`role-badge role-${role.toLowerCase()}`}>{role}</span><span className="level-badge">Wealth Lv.{profile.wealthLevel?.level || profile.wealthLevel || 1} {profile.wealthLevel?.medal || 'Bronze'}</span><span className="level-badge">Charm Lv.{profile.charmLevel?.level || profile.charmLevel || 1} {profile.charmLevel?.medal || 'Bronze'}</span></div>
+          <div className="profile-id-row"><span>Meso Live ID: <strong>{publicId || 'Not assigned'}</strong></span>{publicId && <button className="button button-quiet button-small" type="button" onClick={() => onCopy(publicId)}><Copy size={14} /> Copy</button>}</div>
+        </div>
+      </div>
+      <div className="profile-follow-stats" aria-label="Social stats">
+        <button type="button" onClick={() => navigate('/profile/followers')}><strong>{number(profile.followersCount ?? profile.followers?.length)}</strong><span>Followed</span></button>
+        <button type="button" onClick={() => navigate('/profile/following')}><strong>{number(profile.followingCount ?? profile.following?.length)}</strong><span>Following</span></button>
+        <div><strong>{number(profile.friendsCount ?? profile.friends?.length)}</strong><span>Friends</span></div>
       </div>
     </section>
   );

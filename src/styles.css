@@ -426,12 +426,13 @@ button { color: inherit; }
 
 :root[data-animations='off'] *, :root[data-animations='off'] *::before, :root[data-animations='off'] *::after { scroll-behavior: auto !important; transition-duration: 0s !important; animation-duration: 0s !important; }
 
-.profile-header { display: flex; gap: 18px; align-items: center; }
+.profile-header { display: grid; gap: 16px; }
+.profile-header-content { display: flex; gap: 18px; align-items: center; }
 .profile-header-avatar { position: relative; width: 92px; height: 92px; flex: 0 0 92px; overflow: hidden; border: 2px solid var(--accent); border-radius: 50%; color: #fff; background: linear-gradient(145deg, #9c78e9, #5533a7); font-size: 32px; cursor: pointer; }
 .profile-header-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .profile-header-avatar small { position: absolute; inset: auto 0 0; padding: 4px; background: #0009; font-size: 9px; }
 .profile-header-main { min-width: 0; flex: 1; }
-.profile-header-title, .profile-id-row, .profile-follow-stats { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.profile-header-title, .profile-id-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .profile-header-title h2 { margin: 0; }
 .profile-header-title .muted { margin: 3px 0 0; }
 .profile-badges { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0; }
@@ -439,8 +440,10 @@ button { color: inherit; }
 .role-user { color: #bdb5c9; background: #38323e; } .role-host { color: #ffd276; background: #4a351b; } .role-agent { color: #9ee9c1; background: #183c2d; } .role-admin { color: #ff9da8; background: #48202c; }
 .level-badge { color: #dccbff; background: #392750; }
 .profile-id-row { justify-content: flex-start; color: var(--muted); font-size: 11px; }
-.profile-follow-stats { justify-content: flex-start; margin-top: 14px; }
-.profile-follow-stats button { display: grid; gap: 2px; padding: 0 18px 0 0; border: 0; color: var(--text); background: transparent; text-align: left; cursor: pointer; }
+.profile-follow-stats { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--border); padding-top: 14px; text-align: center; }
+.profile-follow-stats button, .profile-follow-stats > div { display: grid; gap: 2px; justify-items: center; min-width: 0; padding: 0 12px; border: 0; border-right: 1px solid var(--border); color: var(--text); background: transparent; text-align: center; }
+.profile-follow-stats > div:last-child { border-right: 0; }
+.profile-follow-stats button { cursor: pointer; }
 .profile-follow-stats span { color: var(--muted); font-size: 10px; }
 .wallet-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
 .wallet-cards .wallet-progress-card { grid-column: 1 / -1; display: grid; gap: 16px; }
@@ -449,7 +452,7 @@ button { color: inherit; }
 .wallet-level { display: grid; gap: 7px; }
 .wallet-level > div:first-child { display: flex; justify-content: space-between; font-size: 12px; }
 .wallet-level small { color: var(--muted); font-size: 10px; }
-.profile-menu-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.profile-menu-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 9px; }
 .profile-menu-grid button, .profile-list-menu button { display: flex; align-items: center; gap: 10px; color: var(--text); background: var(--surface-raised); cursor: pointer; }
 .profile-menu-grid button { min-height: 58px; justify-content: flex-start; padding: 12px; border: 1px solid var(--border); border-radius: 11px; font-size: 11px; font-weight: 700; }
 .profile-list-menu > div { display: grid; gap: 1px; }
@@ -462,7 +465,7 @@ button { color: inherit; }
 .user-list-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); }
 .user-list-row strong, .user-list-row span { flex: 1; }
 .list-avatar { width: 34px; height: 34px; display: grid; flex: 0 0 34px; place-items: center; border-radius: 50%; color: white; background: var(--accent); }
-@media (max-width: 560px) { .profile-header { align-items: flex-start; flex-direction: column; } .profile-header-avatar { width: 74px; height: 74px; flex-basis: 74px; } .profile-header-title { align-items: flex-start; flex-direction: column; } .wallet-cards { grid-template-columns: 1fr; } .wallet-cards .wallet-progress-card { grid-column: auto; } .role-menu-card { align-items: flex-start; flex-direction: column; } }
+@media (max-width: 560px) { .profile-header-content { align-items: flex-start; flex-direction: column; } .profile-header-avatar { width: 74px; height: 74px; flex-basis: 74px; } .profile-header-title { align-items: flex-start; flex-direction: column; } .wallet-cards { grid-template-columns: 1fr; } .role-menu-card { align-items: flex-start; flex-direction: column; } }
 @media (min-width: 700px) {
   .page { padding-top: 44px; }
   .page-heading h1 { font-size: 34px; }

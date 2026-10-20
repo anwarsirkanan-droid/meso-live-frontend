@@ -16,6 +16,7 @@ import LiveRoomPage from '../pages/LiveRoomPage.jsx';
 import Login from '../pages/Login.jsx';
 import MessagesPage from '../pages/MessagesPage.jsx';
 import ProfilePage from '../pages/ProfilePage.jsx';
+import LevelDetailsPage from '../pages/LevelDetailsPage.jsx';
 import ProfileSetup from '../pages/ProfileSetup.jsx';
 import RechargePage from '../pages/RechargePage.jsx';
 import Register from '../pages/Register.jsx';
@@ -195,6 +196,7 @@ export default function AppRoutes() {
           <Route path="/" element={<HomePage />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile/levels" element={<LevelDetailsPage />} />
           <Route path="/profile/settings" element={<SettingsPage />} />
           <Route path="/profile/wallet" element={<HostWalletPage />} />
           <Route path="/profile/agency" element={<AgencyCenterPage />} />
