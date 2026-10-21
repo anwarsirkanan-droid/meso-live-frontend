@@ -314,15 +314,6 @@ export default function HomePage() {
           </span>
           <strong>{listeners}</strong>
         </div>
-        {pinned && (room.isDefaultHostRoom ? (
-          <button className="button button-primary room-card-action" type="button" onClick={openGoLive} disabled={creatingRoom}>
-            {creatingRoom ? 'Creating room…' : 'Go Live'}
-          </button>
-        ) : (
-          <Link className="button button-primary room-card-action" to={`/live/${encodeURIComponent(roomId)}`}>
-            {live ? 'Join Room' : 'Go Live'}
-          </Link>
-        ))}
         {!pinned && (
           <Link className="room-card-hit" to={`/live/${encodeURIComponent(roomId)}`} aria-label={`Join ${roomName}`} />
         )}
@@ -360,11 +351,6 @@ export default function HomePage() {
           <p className="eyebrow">{ownRoomId ? 'YOUR LIVE ROOM IS READY' : 'YOUR NEXT CONVERSATION STARTS HERE'}</p>
           <h2>{ownRoomId ? <>Your room.<br />Your community.</> : <>Find your people.<br />Join the moment.</>}</h2>
           <p className="muted">{ownRoomId ? 'Your room stays on Home — go live whenever you are ready.' : 'Drop into a live room and make a new connection.'}</p>
-          {ownRoomId && (
-            <Link className="button button-primary home-own-room" to={`/room/${encodeURIComponent(ownRoomId)}`}>
-              🎙️ {ownRoom?.isLive ? 'Join Room' : 'Go Live'}
-            </Link>
-          )}
         </div>
         <span className="hero-art" aria-hidden="true">🎙️</span>
       </section>
