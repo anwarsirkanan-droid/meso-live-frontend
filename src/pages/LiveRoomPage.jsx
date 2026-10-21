@@ -762,13 +762,14 @@ export default function LiveRoomPage({
   };
 
   const hostName = host?.username;
+  const hostPublicId = host?.publicId || host?.customId;
   const joined = status === 'connected' || status === 'reconnecting';
   const connectedPeerCount = remotePeers.filter((peer) => peer.connected).length;
   const statusLabel = {
     idle: 'Ready to join',
     'requesting-microphone': 'Requesting microphone',
     connecting: 'Connecting to room',
-    connected: connectedPeerCount ? 'Audio connected' : 'Connected · waiting for others',
+    connected: connectedPeerCount ? 'Audio connected' : 'Connected',
     reconnecting: 'Reconnecting',
     error: 'Signaling error',
   }[status];
@@ -810,11 +811,12 @@ export default function LiveRoomPage({
               <p className="eyebrow">{room?.category ? room.category.toUpperCase() : 'LIVE ROOM'}</p>
               <h1>{room?.title || 'Live room'}</h1>
               <p className="live-room-id">ROOM ID · {roomId}</p>
+              {hostPublicId && <p className="live-room-id">ID: {hostPublicId}</p>}
             </div>
           </div>
           <p className="muted live-room-host">
             {room?.isLive && <span className="live-pill"><i /> LIVE NOW</span>}
-            {hostName ? `Hosted by ${hostName}` : 'Join the conversation'}
+            {hostName && `Hosted by ${hostName}`}
             <span className={`live-room-connection is-${status}`} role="status">{statusLabel}</span>
           </p>
         </div>

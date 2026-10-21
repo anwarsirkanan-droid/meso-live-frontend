@@ -287,8 +287,9 @@ export default function HomePage() {
     setCreatingRoom(true);
     setError('');
     try {
+      const currentUsername = user?.username || ownRoom?.host?.username || 'My';
       const result = await createRoom({
-        title: `${user?.username || 'My'} Live Room`,
+        title: `${currentUsername}'s Live Room`,
         category: 'For You',
         region: user?.region || user?.country || '',
         language: user?.language || '',

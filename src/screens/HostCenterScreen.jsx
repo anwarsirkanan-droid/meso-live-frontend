@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   acceptAgencyInvitation,
   getPendingAgencyInvitations,
@@ -20,7 +21,11 @@ const roleIsHost = (user) =>
 const agencyIsApproved = (user) =>
   !user?.agencyStatus || String(user.agencyStatus).toUpperCase() === 'APPROVED';
 
+const isAgencyOwner = (user) =>
+  user?.isAgencyOwner === true || user?.role === 'AGENT_OWNER' || user?.ownedAgency;
+
 export default function HostCenterScreen() {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [invitations, setInvitations] = useState([]);
   const [agencyId, setAgencyId] = useState('');
@@ -47,9 +52,10 @@ export default function HostCenterScreen() {
   }, []);
 
   const isAgent = roleIsAgent(profile);
+  const isOwner = isAgencyOwner(profile);
   const hasAgency = Boolean(profile?.agencyId);
-  const canJoinAgency = !hasAgency && !isAgent;
-  const canApplyToBecomeAgent = !isAgent;
+  const canJoinAgency = !hasAgency && !isAgent && !isOwner;
+  const canApplyToBecomeAgent = !isAgent && !isOwner;
   const canRequestRelease = hasAgency && !isAgent && roleIsHost(profile) && agencyIsApproved(profile);
 
   const join = async (event) => {
@@ -104,9 +110,18 @@ export default function HostCenterScreen() {
     <Page title="Host Center" eyebrow="YOUR HOST JOURNEY">
       <Card className="host-center-hero">
         <p className="eyebrow">HOST ACCESS</p>
-        <h2>{roleIsHost(profile) ? 'Your Host tools are ready' : 'Start hosting with an agency'}</h2>
-        <p className="muted">Manage your agency membership and Agent applications.</p>
+        <h2>{isOwner ? 'Agency Owner Dashboard' : (roleIsHost(profile) ? 'Your Host tools are ready' : 'Start hosting with an agency')}</h2>
+        <p className="muted">{isOwner ? 'Manage your agency and hosts.' : 'Manage your agency membership and Agent applications.'}</p>
       </Card>
+
+      {isOwner && (
+        <Card title="Agency Owner Actions" className="settings-card">
+          <p className="muted">As an Agency Owner, you have full control over your agency.</p>
+          <button className="button button-primary" type="button" onClick={() => navigate('/agency-dashboard')}>
+            Go to Agency Dashboard
+          </button>
+        </Card>
+      )}
 
       {roleIsHost(profile) && profile.hostVerificationStatus !== 'APPROVED' && (
         <Card title="Host Face Verification" className="settings-card">
@@ -115,7 +130,7 @@ export default function HostCenterScreen() {
         </Card>
       )}
 
-      {canJoinAgency && (
+      {!isOwner && canJoinAgency && (
         <Card title="Join an Agency" className="settings-card">
           <form className="form-stack" onSubmit={join}>
             <label className="field"><span>Agency ID or code</span><input value={agencyId} onChange={(event) => setAgencyId(event.target.value)} placeholder="Enter an Agency ID or code" disabled={status.saving} required /></label>
@@ -124,7 +139,7 @@ export default function HostCenterScreen() {
         </Card>
       )}
 
-      {canApplyToBecomeAgent && (
+      {!isOwner && canApplyToBecomeAgent && (
         <Card title="Create / Become an Agent" className="settings-card">
           <p className="muted">Submit one agency application for approval.</p>
           <button className="button button-primary" type="button" onClick={() => setAgencyModalOpen(true)}>
