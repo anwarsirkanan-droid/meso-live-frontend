@@ -183,29 +183,28 @@ export default function HomePage() {
     window.addEventListener('mesolive-room-status-changed', onLocalRoomStatusChanged);
     setLoading(true);
     setError('');
-    getRooms({ tab: activeTab, region: activeRegion, language: activeLanguage })
-      .then((data) => {
-        if (active) {
-          setRooms(Array.isArray(data) ? data : []);
-        }
-      })
-      .catch((requestError) => {
-        if (active) {
-          setError(requestError.response?.data?.message || 'Could not load live rooms. Please try again.');
-        }
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
+    const searchTimer = window.setTimeout(() => {
+      getRooms({ tab: activeTab, region: activeRegion, language: activeLanguage, search: searchQuery.trim() })
+        .then((data) => {
+          if (active) setRooms(Array.isArray(data) ? data : []);
+        })
+        .catch((requestError) => {
+          if (active) setError(requestError.response?.data?.message || 'Could not load live rooms. Please try again.');
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+    }, searchQuery.trim() ? 250 : 0);
 
     return () => {
       active = false;
+      window.clearTimeout(searchTimer);
       roomStatusSocket.off('room-status-changed', onRoomStatusChanged);
       window.removeEventListener('mesolive-room-updated', onRoomUpdated);
       window.removeEventListener('mesolive-room-status-changed', onLocalRoomStatusChanged);
       roomStatusSocket.disconnect();
     };
-  }, [activeLanguage, activeRegion, activeTab, ownRoomId, updateRoomStatus]);
+  }, [activeLanguage, activeRegion, activeTab, ownRoomId, searchQuery, updateRoomStatus]);
 
   useEffect(() => {
     if (!ownRoomId) return undefined;
