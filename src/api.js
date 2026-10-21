@@ -33,7 +33,14 @@ export const saveProfileSetup = (profile) =>
   API.put('/users/profile', profile).then(dataFrom);
 export const updateProfileAvatar = (avatar) =>
   API.put('/users/avatar', { avatar }).then(dataFrom);
-export const getRooms = () => API.get('/room/all').then(dataFrom);
+export const getRooms = ({ tab = 'foryou', region = '', language = '' } = {}) =>
+  API.get('/rooms', {
+    params: {
+      tab,
+      ...(region ? { region } : {}),
+      ...(language ? { language } : {}),
+    },
+  }).then(dataFrom);
 export const createRoom = (room) => API.post('/room/create', room).then(dataFrom);
 export const getRoom = (roomId) => API.get(`/room/${roomId}`).then(dataFrom);
 export const takeRoomSeat = (roomId, seatIndex) =>
