@@ -66,7 +66,7 @@ export default function LiveRoomPage({
   roomId,
   onClose = () => {},
 }) {
-  const { updateRoom, updateRoomStatus } = useAuth();
+  const { user, updateRoom, updateRoomStatus } = useAuth();
   const [room, setRoom] = useState(null);
   const [profile, setProfile] = useState(null);
   const [gifts, setGifts] = useState([]);
@@ -111,6 +111,7 @@ export default function LiveRoomPage({
   const hostRef = useRef(false);
   const handlePlaybackBlocked = useCallback(() => setPlaybackBlocked(true), []);
   const profileId = String(profile?._id || profile?.id || profile?.userId || '');
+  const authenticatedUserId = String(user?._id || user?.id || user?.userId || profileId);
   const roomOwnerId = String(room?.ownerId?._id || room?.ownerId?.id || room?.ownerId || '');
   const isHost = Boolean(profile && room) && (roomOwnerId
     ? profileId === roomOwnerId
@@ -370,7 +371,7 @@ export default function LiveRoomPage({
       if (joinRequested) return;
       joinRequested = true;
       setStatus('connecting');
-      socket.timeout(10000).emit('join-room', roomId, (timeoutError, result) => {
+      socket.timeout(10000).emit('join_room', { roomId, userId: authenticatedUserId }, (timeoutError, result) => {
         if (timeoutError) {
           joinRequested = false;
           setStatus('error');
@@ -430,7 +431,7 @@ export default function LiveRoomPage({
       audioContextRef.current?.close();
       audioContextRef.current = null;
     };
-  }, [roomId]);
+  }, [authenticatedUserId, roomId]);
 
   const startMicrophoneMeter = async (stream) => {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;

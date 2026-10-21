@@ -97,6 +97,8 @@ button { color: inherit; }
 .room-grid { display: grid; gap: 12px; }
 .room-grid .card + .card { margin-top: 0; }
 .room-card { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px 14px; padding: 14px; }
+.room-card.is-live { cursor: pointer; }
+.room-card.is-live:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .room-card-avatar { width: 58px; height: 58px; flex-basis: 58px; border: 2px solid #6841a6; object-fit: cover; }
 .room-card-main { min-width: 0; display: grid; gap: 7px; }
 .room-card-title-row { display: flex; align-items: center; gap: 8px; min-width: 0; }

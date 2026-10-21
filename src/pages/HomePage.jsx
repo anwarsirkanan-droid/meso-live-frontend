@@ -317,8 +317,25 @@ export default function HomePage() {
     const listeners = Number(room.membersCount) || occupants.length;
     const flag = countryFlag(room.country || host.country);
 
+    const joinLiveRoom = () => {
+      if (live && roomId) navigate(`/live/${encodeURIComponent(roomId)}`);
+    };
+
     return (
-      <Card key={roomId} className={`room-card${pinned ? ' is-pinned-room' : ''}${live ? ' is-live' : ''}`}>
+      <article
+        key={roomId}
+        className={`card room-card${pinned ? ' is-pinned-room' : ''}${live ? ' is-live' : ''}`}
+        onClick={joinLiveRoom}
+        onKeyDown={(event) => {
+          if ((event.key === 'Enter' || event.key === ' ') && live && roomId) {
+            event.preventDefault();
+            joinLiveRoom();
+          }
+        }}
+        role={live && roomId ? 'link' : undefined}
+        tabIndex={live && roomId ? 0 : undefined}
+        aria-label={live && roomId ? `Join ${roomName}` : undefined}
+      >
         {hostAvatar ? (
           <img className="avatar room-card-avatar" src={hostAvatar} alt="" />
         ) : (
@@ -364,10 +381,7 @@ export default function HomePage() {
           </span>
           <strong>{listeners}</strong>
         </div>
-        {!pinned && (
-          <Link className="room-card-hit" to={`/live/${encodeURIComponent(roomId)}`} aria-label={`Join ${roomName}`} />
-        )}
-      </Card>
+      </article>
     );
   };
 
