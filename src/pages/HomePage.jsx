@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CalendarDays, ChevronDown, Globe2, Mic, Search, Trophy, X } from 'lucide-react';
 import { io } from 'socket.io-client';
-import { createRoom, getRoom, getRooms } from '../api.js';
+import { createRoom, getRoom, getRooms, globalSearch } from '../api.js';
 import { Card, Page } from '../components/UI.jsx';
 import { API_URL } from '../config.js';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -111,6 +111,8 @@ export default function HomePage() {
   const [filterOpen, setFilterOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [globalResults, setGlobalResults] = useState({ users: [], agencies: [], rooms: [] });
+  const [globalSearchLoading, setGlobalSearchLoading] = useState(false);
   const ownRoomId = user?.roomId ? String(user.roomId) : '';
 
   const ownRoom = useMemo(() => {
@@ -205,6 +207,33 @@ export default function HomePage() {
       roomStatusSocket.disconnect();
     };
   }, [activeLanguage, activeRegion, activeTab, ownRoomId, searchQuery, updateRoomStatus]);
+
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (!searchOpen || !query) {
+      setGlobalResults({ users: [], agencies: [], rooms: [] });
+      setGlobalSearchLoading(false);
+      return undefined;
+    }
+    let active = true;
+    setGlobalSearchLoading(true);
+    const timer = window.setTimeout(() => {
+      globalSearch(query)
+        .then((data) => {
+          if (active) setGlobalResults({ users: data.users || [], agencies: data.agencies || [], rooms: data.rooms || [] });
+        })
+        .catch(() => {
+          if (active) setGlobalResults({ users: [], agencies: [], rooms: [] });
+        })
+        .finally(() => {
+          if (active) setGlobalSearchLoading(false);
+        });
+    }, 250);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [searchOpen, searchQuery]);
 
   useEffect(() => {
     if (!ownRoomId) return undefined;
@@ -337,7 +366,16 @@ export default function HomePage() {
         <button className="party-search-button" type="button" aria-label={searchOpen ? 'Close search' : 'Search rooms'} onClick={() => setSearchOpen((open) => !open)}>
           <Search size={20} aria-hidden="true" />
         </button>
-        {searchOpen && <input className="party-search-input" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search rooms or hosts" aria-label="Search rooms or hosts" autoFocus />}
+        {searchOpen && <>
+          <input className="party-search-input" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search User ID, Host, Agency ID, or Room ID" aria-label="Search User ID, Host, Agency ID, or Room ID" autoFocus />
+          {searchQuery.trim() && <div className="global-search-results" role="region" aria-label="Global search results">
+            {globalSearchLoading && <p className="muted global-search-status">Searching…</p>}
+            {!globalSearchLoading && !globalResults.users.length && !globalResults.agencies.length && !globalResults.rooms.length && <p className="muted global-search-status">No matching users, agencies, or live rooms.</p>}
+            {!globalSearchLoading && globalResults.users.length > 0 && <section className="global-search-section"><h3>Users / Hosts</h3>{globalResults.users.map((result) => <button className="global-search-result" type="button" key={`user-${result.id}`} onClick={() => { setSearchOpen(false); navigate(`/profile/${encodeURIComponent(String(result.userId || result.id))}`); }}><span className="global-search-avatar">{result.avatar ? <img src={result.avatar} alt="" /> : (result.nickname || 'U').slice(0, 1).toUpperCase()}</span><span className="global-search-copy"><strong>{result.nickname || result.username}</strong><small>ID: {result.customId || result.userId || result.id}{result.agencyName ? ` · ${result.agencyName}` : ''}</small></span>{result.isHost && <span className="profile-pill profile-host-badge">Host</span>}</button>)}</section>}
+            {!globalSearchLoading && globalResults.agencies.length > 0 && <section className="global-search-section"><h3>Agencies</h3>{globalResults.agencies.map((result) => <div className="global-search-result global-search-static" key={`agency-${result.id}`}><span className="global-search-avatar">A</span><span className="global-search-copy"><strong>{result.name}</strong><small>Agency ID: {result.agencyId}</small></span></div>)}</section>}
+            {!globalSearchLoading && globalResults.rooms.length > 0 && <section className="global-search-section"><h3>Live Rooms</h3>{globalResults.rooms.map((result) => <div className="global-search-result" key={`room-${result.id}`}><span className="global-search-avatar">{result.avatar ? <img src={result.avatar} alt="" /> : '🎙️'}</span><span className="global-search-copy"><strong>{result.title}</strong><small>Room ID: {result.roomId}</small></span><button className="button button-primary button-small" type="button" onClick={() => { setSearchOpen(false); navigate(`/room/${encodeURIComponent(String(result.roomId || result.id))}`); }}>Enter</button></div>)}</section>}
+          </div>}
+        </>}
         {activeTab === 'party' && <div className="party-filters" role="tablist" aria-label="Region filters">
           <button className={!activeRegion && !activeLanguage ? 'is-active' : ''} type="button" role="tab" aria-selected={!activeRegion && !activeLanguage} onClick={() => { setActiveRegion(''); setActiveLanguage(''); }}><span className="filter-fire" aria-hidden="true">🔥</span> For You</button>
           <button className={activeRegion === 'Ethiopia' ? 'is-active' : ''} type="button" role="tab" aria-selected={activeRegion === 'Ethiopia'} onClick={() => { setActiveRegion('Ethiopia'); setActiveLanguage(''); }}>🇪🇹 Ethiopia</button>

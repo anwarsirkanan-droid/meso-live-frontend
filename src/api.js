@@ -43,6 +43,7 @@ export const getRooms = ({ tab = 'foryou', region = '', language = '', search = 
     },
   }).then(dataFrom);
 export const searchUsers = (query) => API.get('/users/search', { params: { q: query } }).then(dataFrom);
+export const globalSearch = (query) => API.get('/search', { params: { q: query } }).then(dataFrom);
 export const createRoom = (room) => API.post('/room/create', room).then(dataFrom);
 export const getRoom = (roomId) => API.get(`/room/${roomId}`).then(dataFrom);
 export const takeRoomSeat = (roomId, seatIndex) =>
