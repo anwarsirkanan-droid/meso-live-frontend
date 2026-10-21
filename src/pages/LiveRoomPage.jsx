@@ -110,9 +110,11 @@ export default function LiveRoomPage({
   const autoJoinAttemptedRef = useRef(false);
   const hostRef = useRef(false);
   const handlePlaybackBlocked = useCallback(() => setPlaybackBlocked(true), []);
-  const isHost = Boolean(profile && room?.ownerId) &&
-    String(profile._id || profile.id || '') ===
-      String(room.ownerId?._id || room.ownerId?.id || room.ownerId || '');
+  const profileId = String(profile?._id || profile?.id || profile?.userId || '');
+  const roomOwnerId = String(room?.ownerId?._id || room?.ownerId?.id || room?.ownerId || '');
+  const isHost = Boolean(profile && room) && (roomOwnerId
+    ? profileId === roomOwnerId
+    : String(profile.roomId || profile.room?._id || '') === String(roomId));
   hostRef.current = isHost;
 
   useEffect(() => {

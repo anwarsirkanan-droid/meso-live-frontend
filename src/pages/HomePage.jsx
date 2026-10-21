@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mic } from 'lucide-react';
+import { CalendarDays, Globe2, Mic, Search, Trophy } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { createRoom, getRoom, getRooms } from '../api.js';
 import { Card, Page } from '../components/UI.jsx';
@@ -95,6 +95,10 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [creatingRoom, setCreatingRoom] = useState(false);
+  const [activeTab, setActiveTab] = useState('party');
+  const [activeFilter, setActiveFilter] = useState('For You');
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const ownRoomId = user?.roomId ? String(user.roomId) : '';
 
   const ownRoom = useMemo(() => {
@@ -208,18 +212,27 @@ export default function HomePage() {
 
   const displayedRooms = useMemo(() => {
     const others = rooms.filter((room) => roomIdOf(room) !== ownRoomId);
-    if (!ownRoom) return others;
-    const fromApi = rooms.find((room) => roomIdOf(room) === ownRoomId);
-    return [{
-      ...fromApi,
+    const allRooms = ownRoom ? [{
+      ...rooms.find((room) => roomIdOf(room) === ownRoomId),
       ...ownRoom,
-      membersCount: fromApi?.membersCount ?? ownRoom.membersCount,
-      seats: fromApi?.seats || ownRoom.seats,
-      tags: ownRoom.tags || fromApi?.tags,
-      country: ownRoom.country || fromApi?.country,
+      membersCount: rooms.find((room) => roomIdOf(room) === ownRoomId)?.membersCount ?? ownRoom.membersCount,
+      seats: rooms.find((room) => roomIdOf(room) === ownRoomId)?.seats || ownRoom.seats,
+      tags: ownRoom.tags || rooms.find((room) => roomIdOf(room) === ownRoomId)?.tags,
+      country: ownRoom.country || rooms.find((room) => roomIdOf(room) === ownRoomId)?.country,
       isLive: ownRoom.isLive,
-    }, ...others];
-  }, [ownRoom, ownRoomId, rooms]);
+    }, ...others] : others;
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    const matchesRegion = (room) => {
+      if (activeFilter === 'For You') return true;
+      const country = String(room.country || room.host?.country || room.ownerId?.country || '').toLowerCase();
+      if (activeFilter === 'Ethiopia') return country === 'ethiopia' || country === 'et';
+      return ['ethiopia', 'et', 'kenya', 'ke', 'uganda', 'ug', 'rwanda', 'rw', 'ghana', 'gh', 'nigeria', 'ng', 'south africa', 'za', 'tanzania', 'tz'].includes(country);
+    };
+    const matchesSearch = (room) => !normalizedQuery || [room.title, room.name, room.category, room.host?.username, room.ownerId?.username]
+      .filter(Boolean).some((value) => String(value).toLowerCase().includes(normalizedQuery));
+    const matchesTab = (room) => activeTab === 'party' || room.isFollowing || room.host?.isFollowing || room.ownerId?.isFollowing;
+    return allRooms.filter((room) => matchesRegion(room) && matchesSearch(room) && matchesTab(room));
+  }, [activeFilter, activeTab, ownRoom, ownRoomId, rooms, searchQuery]);
 
   const openGoLive = async () => {
     if (ownRoomId) {
@@ -318,10 +331,30 @@ export default function HomePage() {
   };
 
   return (
-    <Page
-      title="Good evening"
-      eyebrow="YOUR LIVE COMMUNITY"
-    >
+    <Page title="Party">
+      <section className="party-header" aria-label="Party navigation and filters">
+        <div className="party-tabs" role="tablist" aria-label="Home feed">
+          <button className={activeTab === 'follow' ? 'is-active' : ''} type="button" role="tab" aria-selected={activeTab === 'follow'} onClick={() => setActiveTab('follow')}>Follow</button>
+          <button className={activeTab === 'party' ? 'is-active' : ''} type="button" role="tab" aria-selected={activeTab === 'party'} onClick={() => setActiveTab('party')}>Party</button>
+        </div>
+        <button className="party-search-button" type="button" aria-label={searchOpen ? 'Close search' : 'Search rooms'} onClick={() => setSearchOpen((open) => !open)}>
+          <Search size={20} aria-hidden="true" />
+        </button>
+        {searchOpen && <input className="party-search-input" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search rooms or hosts" aria-label="Search rooms or hosts" autoFocus />}
+        <div className="party-filters" role="tablist" aria-label="Region filters">
+          {[['For You', <Globe2 size={14} aria-hidden="true" />], ['Ethiopia', '🇪🇹'], ['Africa (EN)', '🌍']].map(([label, icon]) => (
+            <button className={activeFilter === label ? 'is-active' : ''} type="button" role="tab" aria-selected={activeFilter === label} key={label} onClick={() => setActiveFilter(label)}>
+              {icon}<span>{label}</span>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="party-promos" aria-label="Promotions">
+        <article className="party-promo party-promo-rank"><Trophy size={25} aria-hidden="true" /><div><strong>Rank</strong><span>Climb the leaderboard</span></div><b>→</b></article>
+        <article className="party-promo party-promo-event"><CalendarDays size={25} aria-hidden="true" /><div><strong>Event</strong><span>Join the next challenge</span></div><b>→</b></article>
+      </section>
+
       <section className="hero-card">
         <div>
           <p className="eyebrow">{ownRoomId ? 'YOUR LIVE ROOM IS READY' : 'YOUR NEXT CONVERSATION STARTS HERE'}</p>

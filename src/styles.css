@@ -51,6 +51,26 @@ button { color: inherit; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; margin: 30px 0 14px; }
 .section-heading h2, .feature-card h2 { margin: 0; font: 700 21px Manrope, sans-serif; }
 .section-heading .eyebrow { margin-bottom: 4px; }
+.party-header { display: grid; grid-template-columns: auto auto; align-items: center; gap: 16px; margin: -8px 0 18px; }
+.party-tabs { display: flex; align-items: center; gap: 22px; }
+.party-tabs button { padding: 5px 0 10px; border: 0; border-bottom: 2px solid transparent; color: var(--muted); background: transparent; cursor: pointer; font: 700 18px Manrope; }
+.party-tabs button.is-active { border-color: var(--accent); color: var(--text); }
+.party-search-button { justify-self: end; width: 38px; height: 38px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: 50%; color: var(--text); background: var(--surface); cursor: pointer; }
+.party-search-input { grid-column: 1 / -1; width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 12px; color: var(--text); background: var(--surface); outline: none; }
+.party-search-input:focus { border-color: var(--accent); }
+.party-filters { grid-column: 1 / -1; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; }
+.party-filters::-webkit-scrollbar { display: none; }
+.party-filters button { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 7px 12px; border: 1px solid var(--border); border-radius: 99px; color: var(--muted); background: var(--surface); cursor: pointer; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.party-filters button.is-active { border-color: color-mix(in srgb, var(--accent) 70%, var(--border)); color: #fff; background: color-mix(in srgb, var(--accent) 22%, var(--surface)); }
+.party-promos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
+.party-promo { display: flex; align-items: center; gap: 10px; min-height: 76px; padding: 14px; overflow: hidden; border: 1px solid var(--border); border-radius: 16px; }
+.party-promo svg { flex: 0 0 auto; }
+.party-promo div { display: grid; gap: 3px; min-width: 0; }
+.party-promo strong { font: 800 14px Manrope; }
+.party-promo span { overflow: hidden; color: var(--muted); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.party-promo b { margin-left: auto; font-size: 18px; }
+.party-promo-rank { border-color: #684a96; background: linear-gradient(135deg, #302044, #20182c); color: #e3c9ff; }
+.party-promo-event { border-color: #7d4a5f; background: linear-gradient(135deg, #3b202f, #251923); color: #ffc1ca; }
 .live-pill { display: inline-flex; align-items: center; gap: 7px; padding: 6px 10px; border-radius: 99px; color: #ff8a9e; background: #3a1e2c; font-size: 10px; font-weight: 800; letter-spacing: .7px; white-space: nowrap; }
 .live-pill i { width: 7px; height: 7px; border-radius: 50%; background: #ff607d; box-shadow: 0 0 12px #ff607d; }
 

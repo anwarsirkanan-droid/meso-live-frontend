@@ -9,7 +9,7 @@ import AgencyCenterPage from '../pages/AgencyCenterPage.jsx';
 import AgencyDashboardScreen from '../pages/AgencyDashboardScreen.jsx';
 import DiceGamePage from '../pages/DiceGamePage.jsx';
 import FaceVerifyPage from '../pages/FaceVerifyPage.jsx';
-import HomePage from '../pages/HomePage.jsx';
+import HomeScreen from '../screens/HomeScreen.jsx';
 import HostWalletPage from '../pages/HostWalletPage.jsx';
 import InvitePage from '../pages/InvitePage.jsx';
 import LiveRoomPage from '../pages/LiveRoomPage.jsx';
@@ -184,7 +184,7 @@ export default function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route path="/room/:roomId" element={<LegacyRoomRedirect />} />
           <Route path="/live/:roomId" element={<LiveRoomRoute />} />
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<HomeScreen />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/levels" element={<LevelDetailsPage />} />
