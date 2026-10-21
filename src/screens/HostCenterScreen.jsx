@@ -23,10 +23,12 @@ export default function HostCenterScreen() {
 
   const join = async (event) => {
     event.preventDefault();
-    if (!agencyId.trim()) return setStatus({ error: 'Enter an Agency ID or agency code.', message: '', saving: false });
+    const trimmedAgencyId = agencyId.trim();
+    setAgencyId(trimmedAgencyId);
+    if (!trimmedAgencyId) return setStatus({ error: 'Enter an Agency ID or agency code.', message: '', saving: false });
     setStatus({ error: '', message: '', saving: true });
     try {
-      await joinAgency(agencyId.trim());
+      await joinAgency(trimmedAgencyId);
       setAgencyId('');
       setStatus({ error: '', message: 'You joined the agency and Host access is now unlocked.', saving: false });
       await load();
