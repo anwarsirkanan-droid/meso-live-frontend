@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mic, X } from 'lucide-react';
 import { io } from 'socket.io-client';
-import { getRoom, getRooms } from '../api.js';
+import { createRoom, getRoom, getRooms } from '../api.js';
 import { Card, Page } from '../components/UI.jsx';
 import { API_URL } from '../config.js';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -95,6 +95,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showHostApplication, setShowHostApplication] = useState(false);
+  const [creatingRoom, setCreatingRoom] = useState(false);
   const ownRoomId = user?.roomId ? String(user.roomId) : '';
 
   const ownRoom = useMemo(() => {
@@ -221,12 +222,28 @@ export default function HomePage() {
     }, ...others];
   }, [ownRoom, ownRoomId, rooms]);
 
-  const openGoLive = () => {
+  const openGoLive = async () => {
     if (user?.isHost === true || user?.role === 'HOST') {
       if (ownRoomId) {
-        navigate(`/live/${encodeURIComponent(ownRoomId)}`);
+        navigate(`/room/${encodeURIComponent(ownRoomId)}`);
       } else {
-        navigate('/profile');
+        setCreatingRoom(true);
+        setError('');
+        try {
+          const result = await createRoom({
+            title: `${user.username || 'My'} Live Room`,
+            category: 'For You',
+          });
+          const room = result?.room || result;
+          const roomId = room?._id || room?.id || room?.roomId;
+          if (!roomId) throw new Error('The server did not return a room ID.');
+          updateRoom(room);
+          navigate(`/room/${encodeURIComponent(String(roomId))}`);
+        } catch (requestError) {
+          setError(requestError.response?.data?.message || requestError.message || 'Could not create your live room.');
+        } finally {
+          setCreatingRoom(false);
+        }
       }
       return;
     }
@@ -293,8 +310,8 @@ export default function HomePage() {
           <strong>{listeners}</strong>
         </div>
         {pinned && (room.isDefaultHostRoom ? (
-          <button className="button button-primary room-card-action" type="button" onClick={openGoLive}>
-            Go Live
+          <button className="button button-primary room-card-action" type="button" onClick={openGoLive} disabled={creatingRoom}>
+            {creatingRoom ? 'Creating room…' : 'Go Live'}
           </button>
         ) : (
           <Link className="button button-primary room-card-action" to={`/live/${encodeURIComponent(roomId)}`}>
@@ -319,7 +336,7 @@ export default function HomePage() {
           <h2>{ownRoomId ? <>Your room.<br />Your community.</> : <>Find your people.<br />Join the moment.</>}</h2>
           <p className="muted">{ownRoomId ? 'Your room stays on Home — go live whenever you are ready.' : 'Drop into a live room and make a new connection.'}</p>
           {ownRoomId && (
-            <Link className="button button-primary home-own-room" to={`/live/${encodeURIComponent(ownRoomId)}`}>
+            <Link className="button button-primary home-own-room" to={`/room/${encodeURIComponent(ownRoomId)}`}>
               🎙️ {ownRoom?.isLive ? 'Join Room' : 'Go Live'}
             </Link>
           )}
