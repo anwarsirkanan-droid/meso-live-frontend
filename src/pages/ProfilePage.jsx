@@ -4,7 +4,7 @@ import GridMenu from '../components/GridMenu.jsx';
 import ListMenu from '../components/ListMenu.jsx';
 import ProfileHeader from '../components/ProfileHeader.jsx';
 import WalletCards from '../components/WalletCards.jsx';
-import { Card, Loading, Page, PageLink } from '../components/UI.jsx';
+import { Loading, Page } from '../components/UI.jsx';
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
@@ -50,9 +50,8 @@ export default function ProfilePage() {
           <ProfileHeader profile={profile} onCopy={copyUserId} />
           {copyStatus && <p className="profile-copy-status" role="status">{copyStatus}</p>}
           <WalletCards wallet={wallet || profile} />
-          <GridMenu />
+          <GridMenu profile={profile} />
           <ListMenu />
-          <Card title="Host Center" className="host-center-entry"><p className="muted">Join an agency, review invitations, and unlock Host Tasks.</p><PageLink to="/host-center">Open Host Center</PageLink></Card>
         </>
       )}
     </Page>

@@ -86,9 +86,9 @@ export const acceptAgencyInvitation = (invitationId) =>
 export const rejectAgencyInvitation = (invitationId) =>
   API.post('/agency/invitations/reject', { invitationId }).then(dataFrom);
 export const searchAgencyUser = (publicId) =>
-  API.get('/agency/invitations/search', { params: { publicId } }).then(dataFrom);
+  API.get('/agency/search-user', { params: { publicId } }).then(dataFrom);
 export const sendAgencyInvitation = (publicId) =>
-  API.post('/agency/invitations', { publicId }).then(dataFrom);
+  API.post('/agency/invite', { publicId }).then(dataFrom);
 export const getAgencyCommission = () => API.get('/agency/commission').then(dataFrom);
 export const getAgencyHostRevenue = (period = '30d') =>
   API.get('/agency/host-revenue', { params: { period } }).then(dataFrom);

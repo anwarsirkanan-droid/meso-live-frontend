@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getAgencyDashboard } from '../api.js';
+import { getAgencyDashboard, searchAgencyUser, sendAgencyInvitation } from '../api.js';
 import { Card, Loading, Page } from '../components/UI.jsx';
 
 const number = (value) => (Number(value) || 0).toLocaleString();
@@ -20,12 +20,39 @@ function Progress({ label, value, target, unit }) {
 export default function AgencyDashboardScreen() {
   const [dashboard, setDashboard] = useState(null);
   const [error, setError] = useState('');
+  const [publicId, setPublicId] = useState('');
+  const [foundUser, setFoundUser] = useState(null);
+  const [inviteStatus, setInviteStatus] = useState({ error: '', message: '', loading: false });
 
   useEffect(() => {
     getAgencyDashboard().then(setDashboard).catch((requestError) => {
       setError(requestError.response?.data?.message || requestError.message || 'Could not load the agency dashboard.');
     });
   }, []);
+
+  const searchUser = async (event) => {
+    event.preventDefault();
+    setInviteStatus({ error: '', message: '', loading: true });
+    setFoundUser(null);
+    try {
+      const result = await searchAgencyUser(publicId.trim());
+      setFoundUser(result.user || result);
+      setInviteStatus({ error: '', message: '', loading: false });
+    } catch (requestError) {
+      setInviteStatus({ error: requestError.response?.data?.message || 'User not found.', message: '', loading: false });
+    }
+  };
+
+  const inviteUser = async () => {
+    if (!foundUser) return;
+    setInviteStatus({ error: '', message: '', loading: true });
+    try {
+      await sendAgencyInvitation(foundUser.publicId);
+      setInviteStatus({ error: '', message: 'Invitation sent successfully.', loading: false });
+    } catch (requestError) {
+      setInviteStatus({ error: requestError.response?.data?.message || 'Could not send the invitation.', message: '', loading: false });
+    }
+  };
 
   return (
     <Page title="Agency Dashboard" eyebrow="AGENCY CENTER">
@@ -41,6 +68,13 @@ export default function AgencyDashboardScreen() {
         <Card title="Invite Host">
           <p className="muted">Share this unique code with hosts who want to join your agency.</p>
           <div className="agency-code">{dashboard.agency.agencyCode}</div>
+          <form className="agency-user-search" onSubmit={searchUser}>
+            <label className="field"><span>Search user by Public ID</span><input inputMode="numeric" value={publicId} onChange={(event) => setPublicId(event.target.value)} placeholder="Example: 1000123" /></label>
+            <button className="button button-secondary" type="submit" disabled={inviteStatus.loading || !publicId.trim()}>{inviteStatus.loading ? 'Searching…' : 'Search user'}</button>
+          </form>
+          {foundUser && <div className="agency-search-result"><div className="agency-search-user"><div className="agency-search-avatar">{foundUser.avatar || foundUser.profilePicture ? <img src={foundUser.avatar || foundUser.profilePicture} alt="" /> : (foundUser.name || foundUser.username || '?').slice(0, 1).toUpperCase()}</div><div><strong>{foundUser.name || foundUser.username}</strong><p className="muted">@{foundUser.username} · ID: {foundUser.publicId}</p></div></div><button className="button button-primary button-small" type="button" onClick={inviteUser} disabled={inviteStatus.loading || Boolean(foundUser.agencyId)}>{foundUser.agencyId ? 'Already in an agency' : inviteStatus.loading ? 'Sending…' : 'Send Invitation'}</button></div>}
+          {inviteStatus.message && <p className="success-message" role="status">{inviteStatus.message}</p>}
+          {inviteStatus.error && <p className="form-error" role="alert">{inviteStatus.error}</p>}
         </Card>
         <Card title={`Host Progress (${dashboard.month})`}>
           {dashboard.hosts.length === 0 && <p className="muted">No hosts have joined yet.</p>}
