@@ -69,7 +69,11 @@ export default function TaskCenterScreen({ initialTab = 'daily' }) {
   const [error, setError] = useState('');
 
   const loadTasks = () => getTaskCenter().then(setData).catch((requestError) => setError(requestError.response?.data?.message || requestError.message || 'Could not load task center.'));
-  useEffect(() => { loadTasks(); }, []);
+  useEffect(() => {
+    loadTasks();
+    const refreshTimer = window.setInterval(loadTasks, 15000);
+    return () => window.clearInterval(refreshTimer);
+  }, []);
 
   const currentTasks = useMemo(() => data?.[tab === 'daily' ? 'dailyTasks' : 'weeklyTasks'] || [], [data, tab]);
 
