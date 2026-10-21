@@ -11,7 +11,8 @@ export default function ProfileHeader({ profile, onCopy }) {
   const publicId = String(profile.publicId || profile.userId || profile._id || profile.id || '');
   const role = String(profile.role || '').toUpperCase();
   const agencyName = profile.agencyName || profile.agencyId?.name || '';
-  const isHost = profile.isHost === true || role === 'HOST';
+  const isAgent = profile.isAgent === true || role === 'AGENT';
+  const isHost = !isAgent && (profile.isHost === true || role === 'HOST');
   const displayName = profile.fullName || profile.name || profile.username || 'Meso Live member';
   const genderAge = [profile.gender, profile.age ? `${profile.age}` : ''].filter(Boolean).join(' · ') || 'Gender / Age';
   const wealthLevel = profile.wealthLevel?.level || profile.wealthLevel || 1;

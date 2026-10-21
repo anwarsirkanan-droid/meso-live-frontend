@@ -53,7 +53,8 @@ export default function ProfileDetailsScreen() {
   const roomId = profile.roomId;
   const age = profile.age ?? calculateAge(profile.birthday);
   const agencyName = profile.agencyName || profile.agencyId?.name || '';
-  const isHost = profile.isHost === true || String(profile.role || '').toLowerCase() === 'host';
+  const isAgent = profile.isAgent === true || String(profile.role || '').toLowerCase() === 'agent';
+  const isHost = !isAgent && (profile.isHost === true || String(profile.role || '').toLowerCase() === 'host');
   const wealthLevel = profile.wealthLevel?.level || profile.wealthLevel || profile.level || 1;
   const charmLevel = profile.charmLevel?.level || profile.charmLevel || 1;
   const copyId = async () => {
