@@ -105,7 +105,7 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [creatingRoom, setCreatingRoom] = useState(false);
-  const [activeTab, setActiveTab] = useState('foryou');
+  const [activeTab, setActiveTab] = useState('party');
   const [activeRegion, setActiveRegion] = useState('');
   const [activeLanguage, setActiveLanguage] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
@@ -325,12 +325,11 @@ export default function HomePage() {
   };
 
   return (
-    <Page title={activeTab === 'follow' ? 'Follow' : activeTab === 'party' ? 'Party' : 'For You'}>
+    <Page title="Party" hideHeading>
       <section className="party-header" aria-label="Party navigation and filters">
         <div className="party-tabs" role="tablist" aria-label="Home feed">
           {[
             ['follow', 'Follow'],
-            ['foryou', 'For You'],
             ['party', 'Party'],
           ].map(([tab, label]) => (
             <button className={activeTab === tab ? 'is-active' : ''} type="button" role="tab" aria-selected={activeTab === tab} key={tab} onClick={() => setActiveTab(tab)}>{label}</button>
@@ -340,13 +339,12 @@ export default function HomePage() {
           <Search size={20} aria-hidden="true" />
         </button>
         {searchOpen && <input className="party-search-input" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search rooms or hosts" aria-label="Search rooms or hosts" autoFocus />}
-        {activeTab === 'party' && (
-          <button className="party-filter-trigger" type="button" onClick={() => setFilterOpen(true)} aria-haspopup="dialog" aria-expanded={filterOpen}>
-            <Globe2 size={14} aria-hidden="true" />
-            <span>{activeRegion || activeLanguage || 'Region & language'}</span>
-            <ChevronDown size={14} aria-hidden="true" />
-          </button>
-        )}
+        {activeTab === 'party' && <div className="party-filters" role="tablist" aria-label="Region filters">
+          <button className={!activeRegion && !activeLanguage ? 'is-active' : ''} type="button" role="tab" aria-selected={!activeRegion && !activeLanguage} onClick={() => { setActiveRegion(''); setActiveLanguage(''); }}><span className="filter-fire" aria-hidden="true">🔥</span> For You</button>
+          <button className={activeRegion === 'Ethiopia' ? 'is-active' : ''} type="button" role="tab" aria-selected={activeRegion === 'Ethiopia'} onClick={() => { setActiveRegion('Ethiopia'); setActiveLanguage(''); }}>🇪🇹 Ethiopia</button>
+          <button className={activeRegion === 'Africa (EN)' ? 'is-active' : ''} type="button" role="tab" aria-selected={activeRegion === 'Africa (EN)'} onClick={() => { setActiveRegion('Africa (EN)'); setActiveLanguage(''); }}>🇪🇹🇳🇬🇬🇭 Africa (EN)</button>
+          <button className="party-filter-trigger" type="button" onClick={() => setFilterOpen(true)} aria-haspopup="dialog" aria-expanded={filterOpen} aria-label="Open region and language filters"><ChevronDown size={17} aria-hidden="true" /></button>
+        </div>}
       </section>
 
       {filterOpen && (

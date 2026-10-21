@@ -1,15 +1,15 @@
 import { Link } from 'react-router-dom';
 
-export function Page({ title, eyebrow, children, actions }) {
+export function Page({ title, eyebrow, children, actions, hideHeading = false }) {
   return (
     <main className="page">
-      <div className="page-heading">
+      {!hideHeading && <div className="page-heading">
         <div>
           {eyebrow && <p className="eyebrow">{eyebrow}</p>}
           <h1>{title}</h1>
         </div>
         {actions}
-      </div>
+      </div>}
       {children}
     </main>
   );
