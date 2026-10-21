@@ -1,7 +1,7 @@
 import { Copy, Edit3, MessageCircle, ShieldCheck } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getProfile, getUserProfile } from '../api.js';
+import { followUser, getProfile, getUserProfile, unfollowUser } from '../api.js';
 import { Card, Loading, Page } from '../components/UI.jsx';
 
 const imageOf = (profile) => profile?.profilePicture || profile?.avatar || '';
@@ -21,7 +21,10 @@ export default function ProfileDetailsScreen() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [viewer, setViewer] = useState(null);
-  const [error, setError] = useState('');
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [followLoading, setFollowLoading] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const [followError, setFollowError] = useState('');
   const [copyStatus, setCopyStatus] = useState('');
 
   useEffect(() => {
@@ -31,10 +34,19 @@ export default function ProfileDetailsScreen() {
         if (active) {
           setProfile(data);
           setViewer(current);
+          const profileId = idOf(data);
+          const currentId = idOf(current);
+          if (profileId && currentId && profileId !== currentId) {
+            const followingList = Array.isArray(current.following) ? current.following : [];
+            const like = followingList.some((entry) => String(entry?._id || entry?.id || entry?.userId || entry) === String(profileId));
+            setIsFollowing(Boolean(like));
+          } else {
+            setIsFollowing(false);
+          }
         }
       })
       .catch((requestError) => {
-        if (active) setError(requestError.response?.data?.message || requestError.message || 'Could not load this profile.');
+        if (active) setProfileError(requestError.response?.data?.message || requestError.message || 'Could not load this profile.');
       });
     return () => { active = false; };
   }, [userId]);
@@ -44,7 +56,31 @@ export default function ProfileDetailsScreen() {
     return idOf(profile) === idOf(viewer) || (profile.publicId && String(profile.publicId) === String(viewer.publicId));
   }, [profile, userId, viewer]);
 
-  if (error) return <Page title="Profile"><p className="form-error" role="alert">{error}</p></Page>;
+  const handleFollowToggle = async () => {
+    if (!profile || !viewer || isOwnProfile || followLoading) return;
+
+    const targetUserId = idOf(profile);
+    if (!targetUserId) return;
+
+    setFollowLoading(true);
+    setFollowError('');
+
+    try {
+      if (isFollowing) {
+        await unfollowUser(targetUserId);
+        setIsFollowing(false);
+      } else {
+        await followUser(targetUserId);
+        setIsFollowing(true);
+      }
+    } catch (requestError) {
+      setFollowError(requestError.response?.data?.message || requestError.message || 'Something went wrong while updating follow status.');
+    } finally {
+      setFollowLoading(false);
+    }
+  };
+
+  if (profileError) return <Page title="Profile"><p className="form-error" role="alert">{profileError}</p></Page>;
   if (!profile) return <Page title="Profile"><Loading>Loading profile…</Loading></Page>;
 
   const picture = imageOf(profile);
@@ -84,6 +120,18 @@ export default function ProfileDetailsScreen() {
             {!isOwnProfile && <span className={`profile-status-badge status-${String(profile.status || 'OFFLINE').toLowerCase()}`}><i /> {profile.status || 'OFFLINE'}</span>}
           </div>
         </div>
+        {!isOwnProfile && (
+          <button
+            className="button button-primary button-small"
+            type="button"
+            onClick={handleFollowToggle}
+            disabled={followLoading}
+            aria-label={isFollowing ? 'Unfollow user' : 'Follow user'}
+          >
+            {followLoading ? 'Please wait…' : isFollowing ? 'Following' : '+ Follow'}
+          </button>
+        )}
+        {followError && <p className="form-error" role="alert">{followError}</p>}
         <div className="profile-badges profile-details-badges">
           {profile.countryFlag && <span className="profile-pill">{profile.countryFlag} {profile.country || ''}</span>}
           {profile.gender && age !== null && <span className="profile-pill">{profile.gender === 'Male' ? '♂' : profile.gender === 'Female' ? '♀' : '⚧'} {age}</span>}
