@@ -1,17 +1,22 @@
 import { useEffect, useState } from 'react';
 import { Copy, ExternalLink, RefreshCw } from 'lucide-react';
-import { applyForAgencyExit, applyForSubAgency, getAgencyCenter, getAgencyCommission, getAgencyInviteLinks } from '../api.js';
+import { applyForAgency, applyForAgencyExit, applyForSubAgency, getAgencyCenter, getAgencyCommission, getAgencyInviteLinks } from '../api.js';
 import { Card, Loading, Page } from '../components/UI.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 const number = (value) => (Number(value) || 0).toLocaleString();
 const percent = (value) => `${(Number(value || 0) * 100).toFixed(0)}%`;
 
 export default function AgencyCenterScreen() {
+  const { user } = useAuth();
+  const isAgent = user?.isAgent === true || String(user?.role || '').toLowerCase() === 'agent';
   const [center, setCenter] = useState(null);
   const [rules, setRules] = useState([]);
   const [links, setLinks] = useState(null);
   const [parentAgencyId, setParentAgencyId] = useState('');
   const [applicationMessage, setApplicationMessage] = useState('');
+  const [agencyId, setAgencyId] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || '');
   const [status, setStatus] = useState({ error: '', message: '', saving: false });
 
   const load = async () => {
@@ -28,10 +33,23 @@ export default function AgencyCenterScreen() {
   };
 
   useEffect(() => {
+    if (!isAgent) return undefined;
     load();
     const refresh = window.setInterval(load, 30000);
     return () => window.clearInterval(refresh);
-  }, []);
+  }, [isAgent]);
+
+  const submitAgencyApplication = async (event) => {
+    event.preventDefault();
+    setStatus({ error: '', message: '', saving: true });
+    try {
+      await applyForAgency({ agencyId: agencyId.trim(), phoneNumber: phoneNumber.trim() });
+      setAgencyId('');
+      setStatus({ error: '', message: 'Agency application submitted for Agent approval.', saving: false });
+    } catch (error) {
+      setStatus({ error: error.response?.data?.message || 'Could not submit the agency application.', message: '', saving: false });
+    }
+  };
 
   const copy = async (value) => {
     if (!value) return;
@@ -57,6 +75,23 @@ export default function AgencyCenterScreen() {
       setStatus({ error: '', message: 'Exit application submitted.', saving: false });
     } catch (error) { setStatus({ error: error.response?.data?.message || 'Could not submit the exit application.', message: '', saving: false }); }
   };
+
+  if (!isAgent) {
+    return (
+      <Page title="Agency Center" eyebrow="BECOME AN AGENT">
+        <Card title="Apply to Become an Agent">
+          <p className="muted">Join an agency by submitting your Agent name or Agency ID and contact information.</p>
+          <form className="form-stack" onSubmit={submitAgencyApplication}>
+            <label className="field"><span>Agent name / Agency ID</span><input value={agencyId} onChange={(event) => setAgencyId(event.target.value)} placeholder="Enter an Agency ID or code" required disabled={status.saving} /></label>
+            <label className="field"><span>Phone / contact info</span><input value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value)} placeholder="Phone number" required disabled={status.saving} /></label>
+            <button className="button button-primary" type="submit" disabled={status.saving}>{status.saving ? 'Submitting…' : 'Apply for Agency'}</button>
+          </form>
+          {status.error && <p className="form-error" role="alert">{status.error}</p>}
+          {status.message && <p className="success-message" role="status">{status.message}</p>}
+        </Card>
+      </Page>
+    );
+  }
 
   if (!center) return <Page title="Agency Center" eyebrow="MY AGENCY"><Loading>{status.error || 'Loading Agency Center…'}</Loading></Page>;
   const revenue = center.giftRevenue || {};
