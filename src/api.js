@@ -42,6 +42,8 @@ export const getRooms = ({ tab = 'foryou', region = '', language = '', search = 
       ...(search ? { search } : {}),
     },
   }).then(dataFrom);
+export const getActiveRooms = () =>
+  API.get('/rooms/active', { headers: { 'Cache-Control': 'no-cache' } }).then(dataFrom);
 export const searchUsers = (query) => API.get('/users/search', { params: { q: query } }).then(dataFrom);
 export const globalSearch = (query) => API.get('/search', { params: { q: query } }).then(dataFrom);
 export const createRoom = (room) => API.post('/room/create', room).then(dataFrom);

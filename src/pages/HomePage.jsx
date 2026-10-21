@@ -152,9 +152,31 @@ export default function HomePage() {
 
   useEffect(() => {
     let active = true;
+    let fetchingRooms = false;
     const roomStatusSocket = io(API_URL, {
       auth: { token: localStorage.getItem('token') || '' },
     });
+    const refreshRooms = async () => {
+      if (!active || fetchingRooms) return;
+      fetchingRooms = true;
+      try {
+        const data = await getRooms({
+          tab: activeTab,
+          region: activeRegion,
+          language: activeLanguage,
+          search: searchQuery.trim(),
+        });
+        if (active) {
+          setRooms(Array.isArray(data) ? data : []);
+          setError('');
+        }
+      } catch (requestError) {
+        if (active) setError(requestError.response?.data?.message || 'Could not load live rooms. Please try again.');
+      } finally {
+        fetchingRooms = false;
+        if (active) setLoading(false);
+      }
+    };
     const applyRoomStatus = ({ roomId, isLive } = {}) => {
       if (!roomId) return;
       const live = isLive === true || String(isLive || '').toLowerCase() === 'live';
@@ -167,7 +189,9 @@ export default function HomePage() {
       if (!roomId) return;
       updateRoomStatus(roomId, isLive === true || String(isLive || '').toLowerCase() === 'live');
       applyRoomStatus(payload);
+      refreshRooms();
     };
+    const onRoomListUpdated = () => refreshRooms();
     const onRoomUpdated = (event) => {
       const room = event.detail;
       if (!room?._id) return;
@@ -181,27 +205,22 @@ export default function HomePage() {
     const onLocalRoomStatusChanged = (event) => applyRoomStatus(event.detail);
 
     roomStatusSocket.on('room-status-changed', onRoomStatusChanged);
+    roomStatusSocket.on('room_list_updated', onRoomListUpdated);
     window.addEventListener('mesolive-room-updated', onRoomUpdated);
     window.addEventListener('mesolive-room-status-changed', onLocalRoomStatusChanged);
     setLoading(true);
     setError('');
-    const searchTimer = window.setTimeout(() => {
-      getRooms({ tab: activeTab, region: activeRegion, language: activeLanguage, search: searchQuery.trim() })
-        .then((data) => {
-          if (active) setRooms(Array.isArray(data) ? data : []);
-        })
-        .catch((requestError) => {
-          if (active) setError(requestError.response?.data?.message || 'Could not load live rooms. Please try again.');
-        })
-        .finally(() => {
-          if (active) setLoading(false);
-        });
-    }, searchQuery.trim() ? 250 : 0);
+    const searchTimer = window.setTimeout(refreshRooms, searchQuery.trim() ? 250 : 0);
+    const refreshInterval = window.setInterval(refreshRooms, 5000);
+    window.addEventListener('focus', refreshRooms);
 
     return () => {
       active = false;
       window.clearTimeout(searchTimer);
+      window.clearInterval(refreshInterval);
+      window.removeEventListener('focus', refreshRooms);
       roomStatusSocket.off('room-status-changed', onRoomStatusChanged);
+      roomStatusSocket.off('room_list_updated', onRoomListUpdated);
       window.removeEventListener('mesolive-room-updated', onRoomUpdated);
       window.removeEventListener('mesolive-room-status-changed', onLocalRoomStatusChanged);
       roomStatusSocket.disconnect();
