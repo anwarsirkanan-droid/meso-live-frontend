@@ -10,9 +10,9 @@ export default function ProfileHeader({ profile, onCopy }) {
   const picture = profile.profilePicture || profile.avatar || profile.picture;
   const publicId = String(profile.publicId || profile.userId || profile._id || profile.id || '');
   const role = String(profile.role || '').toUpperCase();
-  const belongsToAgency = Boolean(profile.agencyId || profile.agency);
-  const isAgent = profile.isAgent === true || role === 'AGENT';
-  const isHost = !isAgent && (profile.isHost === true || role === 'HOST');
+  const belongsToAgency = Boolean(profile.agencyId) &&
+    String(profile.agencyStatus || '').toUpperCase() === 'APPROVED';
+  const isHost = !belongsToAgency && (profile.isHost === true || role === 'HOST');
   const displayName = profile.fullName || profile.name || profile.username || 'Meso Live member';
   const wealthLevel = profile.wealthLevel?.level || profile.wealthLevel || 1;
   const charmLevel = profile.charmLevel?.level || profile.charmLevel || 1;
