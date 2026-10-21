@@ -6,6 +6,15 @@ import { Card, Loading, Page } from '../components/UI.jsx';
 
 const imageOf = (profile) => profile?.profilePicture || profile?.avatar || '';
 const idOf = (profile) => String(profile?._id || profile?.id || profile?.userId || profile?.publicId || '');
+const calculateAge = (birthday) => {
+  if (!birthday) return null;
+  const birthDate = new Date(birthday);
+  if (Number.isNaN(birthDate.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  if (today.getMonth() < birthDate.getMonth() || (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) age -= 1;
+  return age >= 0 ? age : null;
+};
 
 export default function ProfileDetailsScreen() {
   const { userId } = useParams();
@@ -41,6 +50,7 @@ export default function ProfileDetailsScreen() {
   const displayName = profile.name || profile.username || 'Meso Live member';
   const publicId = profile.publicId || profile._id;
   const roomId = profile.roomId;
+  const age = calculateAge(profile.birthday);
 
   return (
     <Page
@@ -65,6 +75,7 @@ export default function ProfileDetailsScreen() {
           {profile.isVerified && <span className="profile-pill"><ShieldCheck size={12} /> Verified</span>}
           <span className="profile-pill">Level {profile.level || profile.wealthLevel?.level || 1}</span>
           {profile.gender && <span className="profile-pill">{profile.gender}</span>}
+          {age !== null && <span className="profile-pill">Age {age}</span>}
           {profile.country && <span className="profile-pill"><MapPin size={12} /> {profile.country}</span>}
         </div>
         <p className="profile-signature">{profile.bio || 'No signature yet.'}</p>
@@ -75,7 +86,7 @@ export default function ProfileDetailsScreen() {
           <div className="profile-chatroom-thumb">
             {profile.roomAvatar ? <img src={profile.roomAvatar} alt="" /> : <MessageCircle size={24} />}
           </div>
-          <div className="profile-chatroom-copy"><p className="eyebrow">CHATROOM</p><h2>{profile.roomName || 'Live audio room'}</h2><span className="muted">Join the conversation</span></div>
+          <div className="profile-chatroom-copy"><p className="eyebrow">CHATROOM</p><h2>{profile.roomTitle || profile.roomName || 'Live audio room'}</h2><span className="muted">Join the conversation</span></div>
           <button className="button button-primary button-small" type="button" onClick={() => navigate(`/room/${encodeURIComponent(String(roomId))}`)}>Enter</button>
         </Card>
       )}

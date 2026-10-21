@@ -11,6 +11,27 @@ const toDataUrl = (file) => new Promise((resolve, reject) => {
   reader.readAsDataURL(file);
 });
 
+const COUNTRIES = [
+  ['Ethiopia', '🇪🇹'], ['Kenya', '🇰🇪'], ['Nigeria', '🇳🇬'], ['Ghana', '🇬🇭'],
+  ['South Africa', '🇿🇦'], ['Rwanda', '🇷🇼'], ['Uganda', '🇺🇬'], ['Tanzania', '🇹🇿'],
+  ['Philippines', '🇵🇭'], ['Indonesia', '🇮🇩'], ['India', '🇮🇳'], ['Pakistan', '🇵🇰'],
+  ['Saudi Arabia', '🇸🇦'], ['United Arab Emirates', '🇦🇪'], ['Egypt', '🇪🇬'],
+  ['Turkey', '🇹🇷'], ['United Kingdom', '🇬🇧'], ['United States', '🇺🇸'],
+  ['Canada', '🇨🇦'], ['Australia', '🇦🇺'], ['France', '🇫🇷'], ['Germany', '🇩🇪'],
+];
+
+const calculateAge = (birthday) => {
+  if (!birthday) return null;
+  const birthDate = new Date(`${birthday}T00:00:00`);
+  if (Number.isNaN(birthDate.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const beforeBirthday = today.getMonth() < birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate());
+  if (beforeBirthday) age -= 1;
+  return age >= 0 ? age : null;
+};
+
 export default function EditProfileScreen() {
   const navigate = useNavigate();
   const fileRef = useRef(null);
@@ -66,8 +87,8 @@ export default function EditProfileScreen() {
         <Card title="Profile information">
           <Field label="Nickname" value={form.username} required onChange={(event) => setField('username', event.target.value)} />
           <label className="field"><span>Gender</span><select value={form.gender} onChange={(event) => setField('gender', event.target.value)}><option value="">Select gender</option><option>Male</option><option>Female</option><option>Other</option></select></label>
-          <Field label="Birthday" type="date" value={form.birthday} onChange={(event) => setField('birthday', event.target.value)} />
-          <Field label="Country" value={form.country} onChange={(event) => setField('country', event.target.value)} />
+          <label className="field"><span>Birthday</span><input type="date" value={form.birthday} max={new Date().toISOString().slice(0, 10)} onChange={(event) => setField('birthday', event.target.value)} /><small className="field-hint">{calculateAge(form.birthday) === null ? 'Select your date of birth' : `Age ${calculateAge(form.birthday)}`}</small></label>
+          <label className="field"><span>Country</span><select value={form.country} onChange={(event) => setField('country', event.target.value)}><option value="">Select your country</option>{COUNTRIES.map(([country, flag]) => <option value={country} key={country}>{flag} {country}</option>)}</select></label>
           <label className="field"><span>Bio / Signature</span><textarea maxLength="240" value={form.bio} onChange={(event) => setField('bio', event.target.value)} /></label>
           <Field label="Profile picture URL or data" value={form.profilePicture} onChange={(event) => setField('profilePicture', event.target.value)} />
         </Card>
