@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { acceptAgencyInvitation, getPendingAgencyInvitations, getProfile, joinAgency, rejectAgencyInvitation } from '../api.js';
+import CameraFaceVerification from '../components/CameraFaceVerification.jsx';
 import { Card, ErrorMessage, Loading, Page } from '../components/UI.jsx';
 
 export default function HostCenterScreen() {
@@ -63,6 +64,13 @@ export default function HostCenterScreen() {
         <p className="muted">Join an agency directly or respond to an invitation from an Agent.</p>
         {(profile.isHost || profile.role === 'HOST') && <Link className="button button-primary" to="/tasks">Open Host Tasks</Link>}
       </Card>
+
+      {(profile.isHost || profile.role === 'HOST') && profile.hostVerificationStatus !== 'APPROVED' && (
+        <Card title="Host Face Verification" className="settings-card">
+          {profile.hostVerificationStatus === 'PENDING_APPROVAL' && <p className="verification-pending" role="status">Verification Pending Approval</p>}
+          <CameraFaceVerification onSubmitted={load} />
+        </Card>
+      )}
 
       <Card title="Join an Agency" className="settings-card">
         <form className="form-stack" onSubmit={join}>

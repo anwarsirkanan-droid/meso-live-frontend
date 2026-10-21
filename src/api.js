@@ -60,6 +60,12 @@ export const getProfile = async () => {
     return profileFrom(await API.get('/users/profile', { timeout: PROFILE_REQUEST_TIMEOUT_MS }));
   }
 };
+export const submitFaceVerification = (faceImage) =>
+  API.post('/face-verification/submit', { faceImage }).then(dataFrom);
+export const getFaceVerificationStatus = () => API.get('/face-verification/status').then(dataFrom);
+export const getPendingFaceVerifications = () => API.get('/face-verification/pending').then(dataFrom);
+export const reviewFaceVerification = (verificationId, status, adminNote = '') =>
+  API.put(`/face-verification/${encodeURIComponent(verificationId)}/review`, { status, adminNote }).then(dataFrom);
 export const getTheme = () => API.get('/user/theme').then(dataFrom);
 export const updateTheme = (theme) => API.put('/user/theme', theme).then(dataFrom);
 export const generateInvite = () => API.post('/invite/generate').then(dataFrom);

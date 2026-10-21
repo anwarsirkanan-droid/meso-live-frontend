@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getAgencyDashboard, searchAgencyUser, sendAgencyInvitation } from '../api.js';
+import { getAgencyDashboard, getPendingFaceVerifications, reviewFaceVerification, searchAgencyUser, sendAgencyInvitation } from '../api.js';
 import { Card, Loading, Page } from '../components/UI.jsx';
 
 const number = (value) => (Number(value) || 0).toLocaleString();
@@ -23,12 +23,29 @@ export default function AgencyDashboardScreen() {
   const [publicId, setPublicId] = useState('');
   const [foundUser, setFoundUser] = useState(null);
   const [inviteStatus, setInviteStatus] = useState({ error: '', message: '', loading: false });
+  const [pendingVerifications, setPendingVerifications] = useState([]);
+  const [reviewingVerification, setReviewingVerification] = useState('');
 
   useEffect(() => {
-    getAgencyDashboard().then(setDashboard).catch((requestError) => {
+    Promise.all([getAgencyDashboard(), getPendingFaceVerifications()]).then(([agencyData, verificationData]) => {
+      setDashboard(agencyData);
+      setPendingVerifications(verificationData.verifications || []);
+    }).catch((requestError) => {
       setError(requestError.response?.data?.message || requestError.message || 'Could not load the agency dashboard.');
     });
   }, []);
+
+  const reviewVerification = async (verificationId, status) => {
+    setReviewingVerification(verificationId);
+    try {
+      await reviewFaceVerification(verificationId, status);
+      setPendingVerifications((current) => current.filter((item) => item._id !== verificationId));
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || 'Could not review the face verification.');
+    } finally {
+      setReviewingVerification('');
+    }
+  };
 
   const searchUser = async (event) => {
     event.preventDefault();
@@ -75,6 +92,9 @@ export default function AgencyDashboardScreen() {
           {foundUser && <div className="agency-search-result"><div className="agency-search-user"><div className="agency-search-avatar">{foundUser.avatar || foundUser.profilePicture ? <img src={foundUser.avatar || foundUser.profilePicture} alt="" /> : (foundUser.name || foundUser.username || '?').slice(0, 1).toUpperCase()}</div><div><strong>{foundUser.name || foundUser.username}</strong><p className="muted">@{foundUser.username} · ID: {foundUser.publicId}</p></div></div><button className="button button-primary button-small" type="button" onClick={inviteUser} disabled={inviteStatus.loading || Boolean(foundUser.agencyId)}>{foundUser.agencyId ? 'Already in an agency' : inviteStatus.loading ? 'Sending…' : 'Send Invitation'}</button></div>}
           {inviteStatus.message && <p className="success-message" role="status">{inviteStatus.message}</p>}
           {inviteStatus.error && <p className="form-error" role="alert">{inviteStatus.error}</p>}
+        </Card>
+        <Card title={`Pending Face Verification${pendingVerifications.length === 1 ? '' : 's'}`}>
+          {pendingVerifications.length === 0 ? <p className="muted">No pending host verifications.</p> : <div className="verification-review-list">{pendingVerifications.map((verification) => { const user = verification.userId || {}; return <div className="verification-review-card" key={verification._id}><div className="verification-review-user"><div className="agency-search-avatar">{user.avatar || user.profilePicture ? <img src={user.avatar || user.profilePicture} alt="" /> : (user.name || user.username || '?').slice(0, 1).toUpperCase()}</div><div><strong>{user.name || user.username}</strong><p className="muted">@{user.username} · ID: {user.publicId}</p></div></div><div className="verification-review-actions"><button className="button button-primary button-small" type="button" disabled={Boolean(reviewingVerification)} onClick={() => reviewVerification(verification._id, 'APPROVED')}>Approve</button><button className="button button-secondary button-small" type="button" disabled={Boolean(reviewingVerification)} onClick={() => reviewVerification(verification._id, 'REJECTED')}>Reject</button></div></div>; })}</div>}
         </Card>
         <Card title={`Host Progress (${dashboard.month})`}>
           {dashboard.hosts.length === 0 && <p className="muted">No hosts have joined yet.</p>}
