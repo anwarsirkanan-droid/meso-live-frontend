@@ -263,6 +263,15 @@ button { color: inherit; }
 .agency-stats-grid p { margin: 0 0 8px; font-size: 11px; }
 .agency-stats-grid strong { font: 800 17px Manrope; }
 .agency-help { margin: 12px 0 0; font-size: 12px; line-height: 1.5; }
+.host-center-entry { margin-top: 14px; }
+.host-center-hero h2 { margin: 4px 0 8px; font: 700 21px Manrope, sans-serif; }
+.host-center-hero p:not(.eyebrow) { margin: 0 0 16px; font-size: 12px; }
+.agency-invitation-list { display: grid; gap: 10px; }
+.agency-invitation-card { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 14px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface-raised); }
+.agency-invitation-card strong { font-size: 13px; }
+.agency-invitation-card p { margin: 5px 0; font-size: 11px; }
+.agency-invitation-card small { font-size: 10px; }
+.agency-invitation-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 7px; }
 
 .settings-card { margin-bottom: 16px; }
 .setting-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 15px 0; }

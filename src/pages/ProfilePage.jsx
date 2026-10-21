@@ -1,14 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { getProfile, getWallet } from '../api.js';
 import GridMenu from '../components/GridMenu.jsx';
 import ListMenu from '../components/ListMenu.jsx';
 import ProfileHeader from '../components/ProfileHeader.jsx';
 import WalletCards from '../components/WalletCards.jsx';
-import { Card, Loading, Page } from '../components/UI.jsx';
+import { Card, Loading, Page, PageLink } from '../components/UI.jsx';
 
 export default function ProfilePage() {
-  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [wallet, setWallet] = useState(null);
   const [error, setError] = useState('');
@@ -45,8 +43,6 @@ export default function ProfilePage() {
     }
   };
 
-  const roleAction = <Card className="role-menu-card"><h2>Become a Host</h2><p className="muted">Apply to host live rooms and earn diamonds.</p><button className="button button-primary" type="button" onClick={() => navigate('/host-application')}>Become a Host</button></Card>;
-
   return (
     <Page title="My profile" eyebrow="YOUR MESO LIVE ACCOUNT">
       {error ? <p className="form-error" role="alert">{error}</p> : !profile ? <Loading>Loading profile…</Loading> : (
@@ -56,7 +52,7 @@ export default function ProfilePage() {
           <WalletCards wallet={wallet || profile} />
           <GridMenu />
           <ListMenu />
-          {roleAction}
+          <Card title="Host Center" className="host-center-entry"><p className="muted">Join an agency, review invitations, and unlock Host Tasks.</p><PageLink to="/host-center">Open Host Center</PageLink></Card>
         </>
       )}
     </Page>

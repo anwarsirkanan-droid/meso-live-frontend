@@ -79,6 +79,16 @@ export const getHostDailyTasks = () => API.get('/task/host-daily').then(dataFrom
 export const claimHostDailyTask = (taskId) =>
   API.post(`/task/host-daily/${taskId}/claim`).then(dataFrom);
 export const getAgencyCenter = () => API.get('/agency/center').then(dataFrom);
+export const joinAgency = (agencyId) => API.post('/agency/join', { agencyId }).then(dataFrom);
+export const getPendingAgencyInvitations = () => API.get('/agency/invitations/pending').then(dataFrom);
+export const acceptAgencyInvitation = (invitationId) =>
+  API.post('/agency/invitations/accept', { invitationId }).then(dataFrom);
+export const rejectAgencyInvitation = (invitationId) =>
+  API.post('/agency/invitations/reject', { invitationId }).then(dataFrom);
+export const searchAgencyUser = (publicId) =>
+  API.get('/agency/invitations/search', { params: { publicId } }).then(dataFrom);
+export const sendAgencyInvitation = (publicId) =>
+  API.post('/agency/invitations', { publicId }).then(dataFrom);
 export const getAgencyCommission = () => API.get('/agency/commission').then(dataFrom);
 export const getAgencyHostRevenue = (period = '30d') =>
   API.get('/agency/host-revenue', { params: { period } }).then(dataFrom);
