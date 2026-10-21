@@ -114,6 +114,13 @@ export const getAgencyDashboard = () => API.get('/agency/dashboard').then(dataFr
 export const getMyHostTarget = () => API.get('/agency/host/my-target').then(dataFrom);
 export const applyForSubAgency = (application) =>
   API.post('/agency/sub-apply', application).then(dataFrom);
+export const applyForAgency = (application) =>
+  API.post('/agencies/apply', application).then(dataFrom);
+export const getAgencyRequests = () => API.get('/agencies/requests').then(dataFrom);
+export const approveAgencyApplication = (applicationId) =>
+  API.post('/agencies/approve', { applicationId }).then(dataFrom);
+export const rejectAgencyApplication = (applicationId) =>
+  API.post('/agencies/reject', { applicationId }).then(dataFrom);
 export const applyForAgencyExit = (application = {}) =>
   API.post('/agency/exit-apply', application).then(dataFrom);
 export const getRechargePackages = () => API.get('/payment/packages').then(dataFrom);

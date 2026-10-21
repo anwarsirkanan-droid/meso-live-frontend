@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { acceptAgencyInvitation, getPendingAgencyInvitations, getProfile, joinAgency, rejectAgencyInvitation } from '../api.js';
+import { acceptAgencyInvitation, applyForAgency, getPendingAgencyInvitations, getProfile, rejectAgencyInvitation } from '../api.js';
 import CameraFaceVerification from '../components/CameraFaceVerification.jsx';
 import { Card, ErrorMessage, Loading, Page } from '../components/UI.jsx';
 
@@ -8,12 +8,14 @@ export default function HostCenterScreen() {
   const [profile, setProfile] = useState(null);
   const [invitations, setInvitations] = useState([]);
   const [agencyId, setAgencyId] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [status, setStatus] = useState({ error: '', message: '', saving: false });
 
   const load = async () => {
     try {
       const [user, pending] = await Promise.all([getProfile(), getPendingAgencyInvitations()]);
       setProfile(user);
+      setPhoneNumber(user.phoneNumber || '');
       setInvitations(Array.isArray(pending) ? pending : pending.invitations || []);
     } catch (error) {
       setStatus({ error: error.response?.data?.message || error.message || 'Could not load Host Center.', message: '', saving: false });
@@ -29,10 +31,9 @@ export default function HostCenterScreen() {
     if (!trimmedAgencyId) return setStatus({ error: 'Enter an Agency ID or agency code.', message: '', saving: false });
     setStatus({ error: '', message: '', saving: true });
     try {
-      await joinAgency(trimmedAgencyId);
+      await applyForAgency({ agencyId: trimmedAgencyId, phoneNumber });
       setAgencyId('');
-      setStatus({ error: '', message: 'You joined the agency and Host access is now unlocked.', saving: false });
-      await load();
+      setStatus({ error: '', message: 'Agency application submitted for Agent approval.', saving: false });
     } catch (error) {
       setStatus({ error: error.response?.data?.message || 'Could not join the agency.', message: '', saving: false });
     }
@@ -72,10 +73,11 @@ export default function HostCenterScreen() {
         </Card>
       )}
 
-      <Card title="Join an Agency" className="settings-card">
+      <Card title="Apply for an Agency" className="settings-card">
         <form className="form-stack" onSubmit={join}>
-          <label className="field"><span>Agency ID or agency code</span><input value={agencyId} onChange={(event) => setAgencyId(event.target.value)} placeholder="Enter the ID shared by an Agent" disabled={Boolean(profile.agencyId) || status.saving} /></label>
-          <button className="button button-primary" type="submit" disabled={Boolean(profile.agencyId) || status.saving}>{profile.agencyId ? 'Already in an agency' : status.saving ? 'Joining…' : 'Join agency'}</button>
+          <label className="field"><span>Agent name / Agency ID</span><input value={agencyId} onChange={(event) => setAgencyId(event.target.value)} placeholder="Enter an Agency ID or code" disabled={Boolean(profile.agencyId) || status.saving} /></label>
+          <label className="field"><span>Host phone / contact info</span><input value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value)} placeholder="Phone number" disabled={Boolean(profile.agencyId) || status.saving} /></label>
+          <button className="button button-primary" type="submit" disabled={Boolean(profile.agencyId) || status.saving}>{profile.agencyId ? 'Already in an agency' : status.saving ? 'Submitting…' : 'Apply for Agency'}</button>
         </form>
       </Card>
 
