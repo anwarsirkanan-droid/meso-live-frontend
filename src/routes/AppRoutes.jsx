@@ -6,6 +6,7 @@ import Navbar from '../components/Navbar.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import AdminDashboard from '../pages/AdminDashboard.jsx';
 import AgencyCenterPage from '../pages/AgencyCenterPage.jsx';
+import AgencyCenterScreen from '../screens/AgencyCenterScreen.jsx';
 import AgencyDashboardScreen from '../pages/AgencyDashboardScreen.jsx';
 import DiceGamePage from '../pages/DiceGamePage.jsx';
 import FaceVerifyPage from '../pages/FaceVerifyPage.jsx';
@@ -197,7 +198,7 @@ export default function AppRoutes() {
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/profile/settings" element={<SettingsPage />} />
           <Route path="/profile/wallet" element={<HostWalletPage />} />
-          <Route path="/profile/agency" element={<AgencyCenterPage />} />
+          <Route path="/profile/agency" element={<AgencyCenterScreen />} />
           <Route path="/profile/agency-dashboard" element={<AgencyDashboardScreen />} />
           <Route path="/profile/invite" element={<InvitePage />} />
           <Route path="/profile/face-verify" element={<FaceVerifyPage />} />

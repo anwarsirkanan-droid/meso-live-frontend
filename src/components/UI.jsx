@@ -15,9 +15,9 @@ export function Page({ title, eyebrow, children, actions, hideHeading = false })
   );
 }
 
-export function Card({ title, children, className = '' }) {
+export function Card({ title, children, className = '', id }) {
   return (
-    <section className={`card ${className}`.trim()}>
+    <section id={id} className={`card ${className}`.trim()}>
       {title && <h2 className="card-title">{title}</h2>}
       {children}
     </section>

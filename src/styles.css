@@ -590,6 +590,27 @@ button { color: inherit; }
 .user-list-row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--border); }
 .user-list-row strong, .user-list-row span { flex: 1; }
 .list-avatar { width: 34px; height: 34px; display: grid; flex: 0 0 34px; place-items: center; border-radius: 50%; color: white; background: var(--accent); }
+.agency-dashboard-header { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 18px; }
+.agency-dashboard-header h2 { margin: 3px 0; font: 800 22px Manrope; }
+.agency-dashboard-commission { display: grid; gap: 3px; min-width: 190px; }
+.agency-dashboard-commission strong { font: 800 18px Manrope; }
+.agency-refresh-button { display: grid; width: 36px; height: 36px; place-items: center; border: 1px solid var(--border); border-radius: 10px; color: var(--text); background: var(--surface-raised); cursor: pointer; }
+.agency-progress-card { display: grid; gap: 14px; }
+.agency-progress-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.agency-progress-heading strong, .agency-breakdown-grid strong { display: block; font: 800 22px Manrope; }
+.agency-progress-heading span { font-size: 11px; }
+.agency-breakdown-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+.agency-breakdown-grid .card { display: grid; gap: 5px; }
+.agency-breakdown-grid small { color: var(--muted); font-size: 10px; }
+.agency-link-actions, .agency-application-card, .agency-rules-card { margin-top: 14px; }
+.agency-action-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.agency-action-grid button, .agency-action-grid a { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 44px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; color: var(--text); background: var(--surface-raised); cursor: pointer; font: 700 11px Manrope; text-decoration: none; }
+.agency-application-actions { display: flex; flex-wrap: wrap; gap: 9px; }
+.agency-rules-card { display: grid; gap: 0; }
+.agency-rule-row { display: grid; grid-template-columns: 42px 1fr auto; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 11px; }
+.agency-rule-row:last-of-type { border-bottom: 0; }
+.agency-rule-row b { color: var(--accent); }
+@media (max-width: 620px) { .agency-dashboard-header { grid-template-columns: 1fr auto; }.agency-dashboard-commission { grid-column: 1 / -1; }.agency-breakdown-grid, .agency-action-grid { grid-template-columns: 1fr; } }
 @media (max-width: 560px) { .profile-header-content { gap: 10px; } .profile-header-avatar { width: 62px; height: 62px; flex-basis: 62px; } .profile-display-name { font-size: 19px; } .profile-badges { gap: 4px; } .profile-pill { padding: 3px 6px; font-size: 9px; } .wallet-balance-card { gap: 6px; flex-direction: column; align-items: flex-start; } .wallet-balance-card + .wallet-balance-card { padding-left: 12px; } .role-menu-card { align-items: flex-start; flex-direction: column; } }
 @media (min-width: 700px) {
   .page { padding-top: 44px; }
