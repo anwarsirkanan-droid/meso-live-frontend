@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mic, X } from 'lucide-react';
+import { Mic } from 'lucide-react';
 import { io } from 'socket.io-client';
 import { createRoom, getRoom, getRooms } from '../api.js';
 import { Card, Page } from '../components/UI.jsx';
@@ -94,7 +94,6 @@ export default function HomePage() {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showHostApplication, setShowHostApplication] = useState(false);
   const [creatingRoom, setCreatingRoom] = useState(false);
   const ownRoomId = user?.roomId ? String(user.roomId) : '';
 
@@ -223,31 +222,24 @@ export default function HomePage() {
   }, [ownRoom, ownRoomId, rooms]);
 
   const openGoLive = async () => {
-    if (user?.isHost === true || user?.role === 'HOST') {
-      if (ownRoomId) {
-        navigate(`/room/${encodeURIComponent(ownRoomId)}`);
-      } else {
-        setCreatingRoom(true);
-        setError('');
-        try {
-          const result = await createRoom({
-            title: `${user.username || 'My'} Live Room`,
-            category: 'For You',
-          });
-          const room = result?.room || result;
-          const roomId = room?._id || room?.id || room?.roomId;
-          if (!roomId) throw new Error('The server did not return a room ID.');
-          updateRoom(room);
-          navigate(`/room/${encodeURIComponent(String(roomId))}`);
-        } catch (requestError) {
-          setError(requestError.response?.data?.message || requestError.message || 'Could not create your live room.');
-        } finally {
-          setCreatingRoom(false);
-        }
-      }
+    if (ownRoomId) {
+      navigate(`/room/${encodeURIComponent(ownRoomId)}`);
       return;
     }
-    setShowHostApplication(true);
+    setCreatingRoom(true);
+    setError('');
+    try {
+      const result = await createRoom({ title: `${user?.username || 'My'} Live Room`, category: 'For You' });
+      const room = result?.room || result;
+      const roomId = room?._id || room?.id || room?.roomId;
+      if (!roomId) throw new Error('The server did not return a room ID.');
+      updateRoom(room);
+      navigate(`/room/${encodeURIComponent(String(roomId))}`);
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || requestError.message || 'Could not create your live room.');
+    } finally {
+      setCreatingRoom(false);
+    }
   };
 
   const renderRoomCard = (room, pinned = false) => {
@@ -384,36 +376,6 @@ export default function HomePage() {
       >
         <Mic size={24} aria-hidden="true" />
       </button>
-
-      {showHostApplication && (
-        <div className="room-modal-overlay" role="presentation" onMouseDown={(event) => {
-          if (event.target === event.currentTarget) setShowHostApplication(false);
-        }}>
-          <section className="card host-application-dialog" role="dialog" aria-modal="true" aria-labelledby="host-application-title">
-            <button
-              className="button button-quiet button-small host-application-close"
-              type="button"
-              onClick={() => setShowHostApplication(false)}
-              aria-label="Close host application dialog"
-            >
-              <X size={18} />
-            </button>
-            <p className="eyebrow">BECOME A MESO LIVE HOST</p>
-            <h2 id="host-application-title">Ready to host a room?</h2>
-            <p className="muted">
-              Host access must be enabled for your account before you can create a room. Visit your profile for account options.
-            </p>
-            <div className="host-application-actions">
-              <button className="button button-secondary" type="button" onClick={() => setShowHostApplication(false)}>
-                Maybe later
-              </button>
-              <Link className="button button-primary" to="/profile" onClick={() => setShowHostApplication(false)}>
-                View Profile
-              </Link>
-            </div>
-          </section>
-        </div>
-      )}
 
     </Page>
   );
