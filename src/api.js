@@ -72,8 +72,8 @@ export const getProfile = async () => {
 };
 export const getUserProfile = (userId) =>
   API.get(`/users/${encodeURIComponent(userId)}/profile`).then(dataFrom);
-export const submitFaceVerification = (faceImage) =>
-  API.post('/face-verification/submit', { faceImage }).then(dataFrom);
+export const submitFaceVerification = (faceImage, deviceId) =>
+  API.post('/users/face-verification', { faceImage, deviceId }).then(dataFrom);
 export const getFaceVerificationStatus = () => API.get('/face-verification/status').then(dataFrom);
 export const getPendingFaceVerifications = () => API.get('/face-verification/pending').then(dataFrom);
 export const reviewFaceVerification = (verificationId, status, adminNote = '') =>
