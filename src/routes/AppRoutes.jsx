@@ -129,14 +129,12 @@ function AppLayout() {
       return '';
     }
   });
-  const [minimized, setMinimized] = useState(false);
 
   useEffect(() => {
     const routeMatch = location.pathname.match(/^\/live\/([^/]+)/);
     if (!routeMatch) return;
     const roomId = decodeURIComponent(routeMatch[1]);
     setActiveRoomId(roomId);
-    setMinimized(false);
     localStorage.setItem('mesoLive.activeRoomId', roomId);
   }, [location.pathname]);
 
@@ -144,7 +142,6 @@ function AppLayout() {
     location.pathname === `/live/${encodeURIComponent(activeRoomId)}`;
   const closeRoom = () => {
     setActiveRoomId('');
-    setMinimized(false);
     localStorage.removeItem('mesoLive.activeRoomId');
     if (isRoomRoute) navigate('/', { replace: true });
   };
@@ -158,15 +155,6 @@ function AppLayout() {
         <LiveRoomPage
           key={activeRoomId}
           roomId={activeRoomId}
-          isMinimized={!isRoomRoute || minimized}
-          onMinimize={() => {
-            setMinimized(true);
-            if (isRoomRoute) navigate('/', { replace: true });
-          }}
-          onRestore={() => {
-            setMinimized(false);
-            navigate(`/live/${encodeURIComponent(activeRoomId)}`);
-          }}
           onClose={closeRoom}
         />
       )}

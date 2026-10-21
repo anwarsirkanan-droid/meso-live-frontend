@@ -64,9 +64,6 @@ function RemoteAudio({ stream, onPlaybackBlocked }) {
 
 export default function LiveRoomPage({
   roomId,
-  isMinimized = false,
-  onMinimize = () => {},
-  onRestore = () => {},
   onClose = () => {},
 }) {
   const { updateRoom, updateRoomStatus } = useAuth();
@@ -110,6 +107,7 @@ export default function LiveRoomPage({
   const disconnectingRef = useRef(false);
   const roomActiveRef = useRef(true);
   const requestRoomJoinRef = useRef(null);
+  const autoJoinAttemptedRef = useRef(false);
   const hostRef = useRef(false);
   const handlePlaybackBlocked = useCallback(() => setPlaybackBlocked(true), []);
   const isHost = Boolean(profile && room?.ownerId) &&
@@ -499,6 +497,12 @@ export default function LiveRoomPage({
     }
   };
 
+  useEffect(() => {
+    if (loading || !room || !profile || autoJoinAttemptedRef.current) return;
+    autoJoinAttemptedRef.current = true;
+    void joinRoom();
+  }, [loading, room, profile]);
+
   const leaveRoom = () => {
     if (hostRef.current) updateRoomStatus(roomId, false);
     disconnectingRef.current = true;
@@ -709,29 +713,7 @@ export default function LiveRoomPage({
       : 1);
 
   return (
-    <main className={`live-room-page${isMinimized ? ' is-minimized' : ''}`}>
-      {isMinimized && (
-        <div className="live-room-background-bar">
-          <span className={`live-room-background-dot is-${status}`} />
-          <span className="live-room-background-title">{room?.title || 'Meso Live room'}</span>
-          <span className="live-room-background-status">{statusLabel}</span>
-          <button
-            className="room-mini-control"
-            type="button"
-            onClick={toggleMicrophone}
-            disabled={!localStreamRef.current}
-            aria-label={micEnabled ? 'Mute microphone' : 'Unmute microphone'}
-          >
-            {micEnabled ? <Mic size={17} /> : <MicOff size={17} />}
-          </button>
-          <button className="room-mini-control" type="button" onClick={onRestore} aria-label="Return to room">
-            Return
-          </button>
-          <button className="room-mini-control room-mini-close" type="button" onClick={leaveRoom} aria-label="Leave room">
-            <X size={17} />
-          </button>
-        </div>
-      )}
+    <main className="live-room-page">
       <header className="live-room-header">
         <div className="live-room-heading">
           <div className="live-room-host-identity">
@@ -787,9 +769,6 @@ export default function LiveRoomPage({
             )}
             <button className="button button-secondary" type="button" onClick={shareRoom} aria-label="Share room">
               <Share2 size={16} /> Share
-            </button>
-            <button className="button button-secondary" type="button" onClick={onMinimize} aria-label="Minimize room">
-              Minimize
             </button>
             <button className="button button-danger room-close-button" type="button" onClick={leaveRoom} aria-label="Close room">
               <X size={17} />
