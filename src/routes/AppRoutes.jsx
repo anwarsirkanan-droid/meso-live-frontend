@@ -203,6 +203,7 @@ export default function AppRoutes() {
           <Route path="/tasks" element={<TaskCenterScreen />} />
           <Route path="/host-center" element={<HostCenterScreen />} />
           <Route path="/host-rewards" element={<HostRewardsScreen />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/profile/settings" element={<SettingsPage />} />
           <Route path="/profile/wallet" element={<HostWalletPage />} />
           <Route path="/profile/agency" element={<AgencyCenterPage />} />
