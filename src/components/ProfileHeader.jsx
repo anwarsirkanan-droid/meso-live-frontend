@@ -1,4 +1,4 @@
-import { Building2, ChevronRight, Copy } from 'lucide-react';
+import { ChevronRight, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const number = (value) => (Number(value) || 0).toLocaleString();
@@ -38,7 +38,7 @@ export default function ProfileHeader({ profile, onCopy }) {
             {publicId && <button className="profile-copy-button" type="button" aria-label="Copy user ID" onClick={(event) => { event.stopPropagation(); onCopy(publicId); }}><Copy size={13} /></button>}
           </div>
           <div className="profile-badges" aria-label="Profile badges">
-            {belongsToAgency && <span className="profile-pill profile-agency-badge"><Building2 size={12} aria-hidden="true" /> AGENCY</span>}
+            {belongsToAgency && <span className="profile-pill profile-agency-badge">AGENCY</span>}
             {isHost && <span className="profile-pill profile-host-badge">Host</span>}
             <span className="profile-pill">Wealth Lv {wealthLevel}</span>
             <span className="profile-pill">Charm Lv {charmLevel}</span>
