@@ -119,11 +119,19 @@ export const applyForSubAgency = (application) =>
   API.post('/agency/sub-apply', application).then(dataFrom);
 export const applyForAgency = (application) =>
   API.post('/agencies/apply', application).then(dataFrom);
+export const requestAgencyRelease = () =>
+  API.post('/agencies/leave-request').then(dataFrom);
 export const getAgencyRequests = () => API.get('/agencies/requests').then(dataFrom);
 export const approveAgencyApplication = (applicationId) =>
   API.post('/agencies/approve', { applicationId }).then(dataFrom);
 export const rejectAgencyApplication = (applicationId) =>
   API.post('/agencies/reject', { applicationId }).then(dataFrom);
+export const getAgentApplications = () => API.get('/agencies/agent-applications').then(dataFrom);
+export const reviewAgentApplication = (applicationId, action) =>
+  API.post(`/agencies/agent-applications/${action}`, { applicationId }).then(dataFrom);
+export const getAdminAgentApplications = () => API.get('/agencies/admin/agent-applications').then(dataFrom);
+export const reviewAdminAgentApplication = (applicationId, action) =>
+  API.post(`/agencies/admin/agent-applications/${action}`, { applicationId }).then(dataFrom);
 export const applyForAgencyExit = (application = {}) =>
   API.post('/agency/exit-apply', application).then(dataFrom);
 export const getRechargePackages = () => API.get('/payment/packages').then(dataFrom);

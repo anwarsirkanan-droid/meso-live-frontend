@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { approveAgencyApplication, getAgencyDashboard, getAgencyRequests, getPendingFaceVerifications, rejectAgencyApplication, reviewFaceVerification, searchAgencyUser, sendAgencyInvitation } from '../api.js';
+import { approveAgencyApplication, getAgencyDashboard, getAgencyRequests, getAgentApplications, getPendingFaceVerifications, rejectAgencyApplication, reviewAgentApplication, reviewFaceVerification, searchAgencyUser, sendAgencyInvitation } from '../api.js';
 import { Card, Loading, Page } from '../components/UI.jsx';
 
 const number = (value) => (Number(value) || 0).toLocaleString();
@@ -27,12 +27,15 @@ export default function AgencyDashboardScreen() {
   const [reviewingVerification, setReviewingVerification] = useState('');
   const [applications, setApplications] = useState([]);
   const [reviewingApplication, setReviewingApplication] = useState('');
+  const [agentApplications, setAgentApplications] = useState([]);
+  const [reviewingAgentApplication, setReviewingAgentApplication] = useState('');
 
   useEffect(() => {
-    Promise.all([getAgencyDashboard(), getPendingFaceVerifications(), getAgencyRequests()]).then(([agencyData, verificationData, requestData]) => {
+    Promise.all([getAgencyDashboard(), getPendingFaceVerifications(), getAgencyRequests(), getAgentApplications()]).then(([agencyData, verificationData, requestData, agentRequestData]) => {
       setDashboard(agencyData);
       setPendingVerifications(verificationData.verifications || []);
       setApplications(requestData.applications || []);
+      setAgentApplications(agentRequestData.applications || []);
     }).catch((requestError) => {
       setError(requestError.response?.data?.message || requestError.message || 'Could not load the agency dashboard.');
     });
@@ -47,6 +50,18 @@ export default function AgencyDashboardScreen() {
       setError(requestError.response?.data?.message || 'Could not review the face verification.');
     } finally {
       setReviewingVerification('');
+    }
+  };
+
+  const reviewAgentRequest = async (applicationId, action) => {
+    setReviewingAgentApplication(applicationId);
+    try {
+      await reviewAgentApplication(applicationId, action);
+      setAgentApplications((current) => current.filter((item) => item._id !== applicationId));
+    } catch (requestError) {
+      setError(requestError.response?.data?.message || `Could not ${action} the Agent application.`);
+    } finally {
+      setReviewingAgentApplication('');
     }
   };
 
@@ -112,7 +127,10 @@ export default function AgencyDashboardScreen() {
           {pendingVerifications.length === 0 ? <p className="muted">No pending host verifications.</p> : <div className="verification-review-list">{pendingVerifications.map((verification) => { const user = verification.userId || {}; return <div className="verification-review-card" key={verification._id}><div className="verification-review-user"><div className="agency-search-avatar">{user.avatar || user.profilePicture ? <img src={user.avatar || user.profilePicture} alt="" /> : (user.name || user.username || '?').slice(0, 1).toUpperCase()}</div><div><strong>{user.name || user.username}</strong><p className="muted">@{user.username} · ID: {user.publicId}</p></div></div><div className="verification-review-actions"><button className="button button-primary button-small" type="button" disabled={Boolean(reviewingVerification)} onClick={() => reviewVerification(verification._id, 'APPROVED')}>Approve</button><button className="button button-secondary button-small" type="button" disabled={Boolean(reviewingVerification)} onClick={() => reviewVerification(verification._id, 'REJECTED')}>Reject</button></div></div>; })}</div>}
         </Card>
         <Card title={`Pending Applications${applications.length ? ` (${applications.length})` : ''}`}>
-          {applications.length === 0 ? <p className="muted">No pending host applications.</p> : <div className="agency-invitation-list">{applications.map((application) => { const host = application.applicantId || {}; const avatar = host.avatar || host.profilePicture; return <div className="agency-invitation-card" key={application._id}><div className="agency-search-user"><div className="agency-search-avatar">{avatar ? <img src={avatar} alt="" /> : (host.name || host.username || '?').slice(0, 1).toUpperCase()}</div><div><strong>{host.name || host.username || 'Host'}</strong><p className="muted">ID: {host.publicId || host._id}</p><small className="muted">Phone: {application.phoneNumber || host.phoneNumber || '—'}</small></div></div><div className="agency-invitation-actions"><button className="button button-primary button-small" type="button" disabled={Boolean(reviewingApplication)} onClick={() => reviewApplication(application._id, 'approve')}>Approve</button><button className="button button-secondary button-small" type="button" disabled={Boolean(reviewingApplication)} onClick={() => reviewApplication(application._id, 'reject')}>Reject</button></div></div>; })}</div>}
+          {applications.length === 0 ? <p className="muted">No pending host or release applications.</p> : <div className="agency-invitation-list">{applications.map((application) => { const host = application.applicantId || {}; const avatar = host.avatar || host.profilePicture; const isExitRequest = application.applicationType === 'EXIT'; return <div className="agency-invitation-card" key={application._id}><div className="agency-search-user"><div className="agency-search-avatar">{avatar ? <img src={avatar} alt="" /> : (host.name || host.username || '?').slice(0, 1).toUpperCase()}</div><div><strong>{host.name || host.username || 'Host'} · {isExitRequest ? 'Agency release request' : 'Host request'}</strong><p className="muted">ID: {host.publicId || host._id}</p><small className="muted">Phone: {application.phoneNumber || host.phoneNumber || '—'}</small></div></div><div className="agency-invitation-actions"><button className="button button-primary button-small" type="button" disabled={Boolean(reviewingApplication)} onClick={() => reviewApplication(application._id, 'approve')}>Approve</button><button className="button button-secondary button-small" type="button" disabled={Boolean(reviewingApplication)} onClick={() => reviewApplication(application._id, 'reject')}>Reject</button></div></div>; })}</div>}
+        </Card>
+        <Card title={`Pending Agent Applications${agentApplications.length ? ` (${agentApplications.length})` : ''}`}>
+          {agentApplications.length === 0 ? <p className="muted">No pending Agent applications.</p> : <div className="agency-invitation-list">{agentApplications.map((application) => { const applicant = application.applicantId || {}; const avatar = applicant.avatar || applicant.profilePicture; return <div className="agency-invitation-card" key={application._id}><div><div className="agency-search-user"><div className="agency-search-avatar">{avatar ? <img src={avatar} alt="" /> : (applicant.name || applicant.username || '?').slice(0, 1).toUpperCase()}</div><div><strong>{applicant.name || applicant.username || 'Host'} · {application.agencyName}</strong><p className="muted">Phone: {application.phoneNumber || '—'}</p></div></div><p className="muted">{application.experience}</p></div><div className="agency-invitation-actions"><button className="button button-primary button-small" type="button" disabled={Boolean(reviewingAgentApplication)} onClick={() => reviewAgentRequest(application._id, 'approve')}>Approve</button><button className="button button-secondary button-small" type="button" disabled={Boolean(reviewingAgentApplication)} onClick={() => reviewAgentRequest(application._id, 'reject')}>Reject</button></div></div>; })}</div>}
         </Card>
         <Card title={`Host Progress (${dashboard.month})`}>
           {dashboard.hosts.length === 0 && <p className="muted">No hosts have joined yet.</p>}
