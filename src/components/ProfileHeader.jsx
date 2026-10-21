@@ -42,7 +42,17 @@ export default function ProfileHeader({ profile, onCopy }) {
             {publicId && <button className="profile-copy-button" type="button" aria-label="Copy user ID" onClick={(event) => { event.stopPropagation(); onCopy(publicId); }}><Copy size={13} /></button>}
           </div>
         </div>
-        <ChevronRight className="profile-header-arrow" size={22} aria-hidden="true" />
+        <button
+          className="profile-header-arrow"
+          type="button"
+          aria-label="Open profile details"
+          onClick={(event) => {
+            event.stopPropagation();
+            navigate(publicId ? `/profile/${encodeURIComponent(publicId)}` : '/profile');
+          }}
+        >
+          <ChevronRight size={22} aria-hidden="true" />
+        </button>
       </div>
       <div className="profile-follow-stats" aria-label="Social stats">
         <button type="button" onClick={() => navigate('/profile/followers')}><strong>{number(profile.followersCount ?? profile.followers?.length)}</strong><span>Followed</span></button>

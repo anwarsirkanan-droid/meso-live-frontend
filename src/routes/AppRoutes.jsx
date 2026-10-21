@@ -15,7 +15,9 @@ import InvitePage from '../pages/InvitePage.jsx';
 import LiveRoomPage from '../pages/LiveRoomPage.jsx';
 import Login from '../pages/Login.jsx';
 import MessagesPage from '../pages/MessagesPage.jsx';
-import ProfilePage from '../pages/ProfilePage.jsx';
+import MeScreen from '../screens/MeScreen.jsx';
+import ProfileDetailsScreen from '../screens/ProfileDetailsScreen.jsx';
+import EditProfileScreen from '../screens/EditProfileScreen.jsx';
 import LevelDetailsPage from '../pages/LevelDetailsPage.jsx';
 import TaskCenterScreen from '../screens/TaskCenterScreen.js';
 import HostRewardsScreen from '../screens/HostRewardsScreen.js';
@@ -24,7 +26,7 @@ import ProfileSetup from '../pages/ProfileSetup.jsx';
 import RechargePage from '../pages/RechargePage.jsx';
 import Register from '../pages/Register.jsx';
 import SettingsPage from '../pages/SettingsPage.jsx';
-import { EditProfilePage, FollowersPage, FollowingPage, GiftHistoryPage, InvitePageView, MyStreamsPage, WithdrawalPage } from '../pages/ProfileUtilityPages.jsx';
+import { FollowersPage, FollowingPage, GiftHistoryPage, InvitePageView, MyStreamsPage, WithdrawalPage } from '../pages/ProfileUtilityPages.jsx';
 
 function ProtectedRoute({ adminOnly = false, allowIncomplete = false }) {
   const location = useLocation();
@@ -186,7 +188,8 @@ export default function AppRoutes() {
           <Route path="/live/:roomId" element={<LiveRoomRoute />} />
           <Route path="/" element={<HomeScreen />} />
           <Route path="/messages" element={<MessagesPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile" element={<MeScreen />} />
+          <Route path="/profile/:userId" element={<ProfileDetailsScreen />} />
           <Route path="/profile/levels" element={<LevelDetailsPage />} />
           <Route path="/tasks" element={<TaskCenterScreen />} />
           <Route path="/host-center" element={<HostCenterScreen />} />
@@ -199,7 +202,7 @@ export default function AppRoutes() {
           <Route path="/profile/invite" element={<InvitePage />} />
           <Route path="/profile/face-verify" element={<FaceVerifyPage />} />
           <Route path="/profile/recharge" element={<RechargePage />} />
-          <Route path="/profile/edit" element={<EditProfilePage />} />
+          <Route path="/profile/edit" element={<EditProfileScreen />} />
           <Route path="/profile/followers" element={<FollowersPage />} />
           <Route path="/profile/following" element={<FollowingPage />} />
           <Route path="/profile/streams" element={<MyStreamsPage />} />

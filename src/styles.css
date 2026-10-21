@@ -540,7 +540,27 @@ button { color: inherit; }
 .level-badge { color: #dccbff; background: #392750; }
 .profile-id-row { display: flex; align-items: center; justify-content: flex-start; gap: 5px; color: var(--muted); font-size: 11px; }
 .profile-copy-button { display: inline-grid; place-items: center; padding: 2px; border: 0; color: var(--muted); background: transparent; cursor: pointer; }
-.profile-header-arrow { flex: 0 0 auto; color: var(--muted); }
+.profile-header-arrow { flex: 0 0 auto; display: grid; place-items: center; padding: 4px; border: 0; color: var(--muted); background: transparent; cursor: pointer; }
+.profile-top-action, .profile-save-action { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 8px 11px; border: 1px solid var(--border); border-radius: 10px; color: var(--text); background: var(--surface); cursor: pointer; font-size: 11px; font-weight: 700; }
+.profile-save-action { border-color: var(--accent); background: var(--accent); }
+.profile-details-hero { padding: 0 20px 20px; overflow: hidden; }
+.profile-cover { height: 150px; margin: 0 -20px 0; background: linear-gradient(135deg, #5533a7, #20172f 65%, #9a5c86); background-position: center; background-size: cover; }
+.profile-details-identity { display: flex; align-items: end; gap: 14px; margin-top: -38px; }
+.profile-details-avatar { width: 86px; height: 86px; display: grid; flex: 0 0 86px; place-items: center; overflow: hidden; border: 3px solid var(--surface); border-radius: 50%; color: #fff; background: linear-gradient(145deg, #9c78e9, #5533a7); font: 800 30px Manrope; }
+.profile-details-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.profile-details-copy { min-width: 0; padding-bottom: 3px; }
+.profile-details-copy h2 { margin: 0 0 5px; font: 800 21px Manrope; }
+.profile-details-copy .profile-id-row { margin: 0; }
+.profile-status-badge { display: inline-flex; align-items: center; gap: 5px; margin-top: 7px; padding: 4px 8px; border-radius: 99px; font-size: 10px; font-weight: 800; }
+.profile-status-badge i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.status-live { color: #ff91a4; background: #3d202e; }.status-online { color: #72dba3; background: #173328; }.status-offline { color: var(--muted); background: var(--surface-raised); }
+.profile-details-badges { margin-top: 16px; }.profile-details-badges .profile-pill { display: inline-flex; gap: 5px; align-items: center; }
+.profile-signature { margin: 15px 0 0; color: var(--muted); font-size: 12px; line-height: 1.55; }
+.profile-chatroom-card { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+.profile-chatroom-thumb { width: 52px; height: 52px; display: grid; flex: 0 0 52px; place-items: center; overflow: hidden; border-radius: 12px; color: #d7c4ff; background: linear-gradient(140deg, #9c78e9, #5533a7); }.profile-chatroom-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.profile-chatroom-copy { min-width: 0; flex: 1; }.profile-chatroom-copy .eyebrow { margin-bottom: 4px; }.profile-chatroom-copy h2 { overflow: hidden; margin: 0 0 3px; font: 700 14px Manrope; text-overflow: ellipsis; white-space: nowrap; }.profile-chatroom-copy .muted { font-size: 10px; }
+.profile-album-card { margin-top: 14px; }.profile-album-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }.profile-album-grid img { width: 100%; aspect-ratio: 1; border-radius: 10px; object-fit: cover; background: var(--surface-raised); }
+.profile-edit-form { gap: 14px; }.profile-edit-form .card { display: grid; gap: 12px; }.profile-edit-album { grid-template-columns: repeat(3, minmax(0, 1fr)); }.profile-album-item { position: relative; aspect-ratio: 1; }.profile-album-item img { height: 100%; }.profile-album-item button { position: absolute; top: 5px; right: 5px; width: 24px; height: 24px; display: grid; place-items: center; border: 0; border-radius: 50%; color: #fff; background: #0009; cursor: pointer; }.profile-album-add { display: grid; min-height: 100%; place-items: center; align-content: center; gap: 5px; border: 1px dashed var(--border); border-radius: 10px; color: var(--muted); background: var(--surface-raised); cursor: pointer; font-size: 10px; }.profile-album-add:disabled { cursor: not-allowed; opacity: .5; }.profile-hidden-file { display: none; }
 .profile-follow-stats { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--border); padding-top: 14px; text-align: center; }
 .profile-follow-stats button, .profile-follow-stats > div { display: grid; gap: 2px; justify-items: center; min-width: 0; padding: 0 12px; border: 0; border-right: 1px solid var(--border); color: var(--text); background: transparent; text-align: center; }
 .profile-follow-stats > div:last-child { border-right: 0; }
