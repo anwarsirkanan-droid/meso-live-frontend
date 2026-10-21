@@ -88,11 +88,11 @@ export default function ProfileDetailsScreen() {
   const publicId = profile.customId || profile.publicId || profile.id || profile._id;
   const roomId = profile.roomId;
   const age = profile.age ?? calculateAge(profile.birthday);
-  const belongsToAgency = Boolean(profile.agencyId) &&
-    String(profile.agencyStatus || '').toUpperCase() === 'APPROVED';
-  const isAgent = profile.isAgent === true || String(profile.role || '').toLowerCase() === 'agent';
-  const isHost = !belongsToAgency && !isAgent &&
-    (profile.isHost === true || String(profile.role || '').toLowerCase() === 'host');
+  const role = String(profile.role || '').toUpperCase();
+  const isAgent = role === 'AGENT';
+  const isHost = !isAgent && (
+    role === 'HOST' || Boolean(profile.agencyId) || profile.isHost === true
+  );
   const wealthLevel = profile.wealthLevel?.level || profile.wealthLevel || profile.level || 1;
   const charmLevel = profile.charmLevel?.level || profile.charmLevel || 1;
   const copyId = async () => {
@@ -138,8 +138,8 @@ export default function ProfileDetailsScreen() {
           {profile.country && <span className="profile-pill">{profile.countryFlag || ''} {profile.country}</span>}
           {profile.gender && <span className="profile-pill">{profile.gender === 'Male' ? '♂️ Male' : profile.gender === 'Female' ? '♀️ Female' : '⚧ Other'}</span>}
           {age !== null && <span className="profile-pill">Age {age}</span>}
-          {belongsToAgency && <span className="profile-pill profile-agency-badge"><Building2 size={12} aria-hidden="true" /> AGENCY</span>}
-          {isHost && <span className="profile-pill profile-host-badge">Host</span>}
+          {isAgent && <span className="profile-pill profile-agency-badge"><Building2 size={12} aria-hidden="true" /> AGENCY</span>}
+          {isHost && <span className="profile-pill profile-host-badge">HOST</span>}
           {profile.isVip && <span className="profile-pill">VIP</span>}
           {profile.isVerified && <span className="profile-pill"><ShieldCheck size={12} /> Verified</span>}
           <span className="profile-pill">Wealth Lv {wealthLevel}</span>
