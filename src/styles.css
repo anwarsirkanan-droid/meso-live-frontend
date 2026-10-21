@@ -494,6 +494,11 @@ button { color: inherit; }
 .room-gift-modal .room-gift-grid { max-height: 220px; }
 .room-mini-control { min-height: 35px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--border); border-radius: 10px; color: var(--text); background: var(--surface-raised); cursor: pointer; font-size: 10px; font-weight: 700; white-space: nowrap; }
 .room-mini-control:disabled { opacity: .45; cursor: not-allowed; }
+.room-mini-title { min-width: 0; justify-content: flex-start; flex: 1; overflow: hidden; }
+.room-mini-title span:last-child { overflow: hidden; text-overflow: ellipsis; }
+.room-mini-live-indicator { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; background: #ff607d; box-shadow: 0 0 10px #ff607d; }
+.room-mini-icon-control { width: 36px; flex: 0 0 36px; padding: 6px; }
+.room-mini-close { width: 36px; flex: 0 0 36px; padding: 6px; }
 .live-room-page.is-minimized { position: fixed; z-index: 40; inset: auto auto 82px 15px; width: min(100% - 100px, 390px); height: auto; min-height: 0; padding: 0; overflow: visible; background: transparent; }
 .live-room-page.is-minimized > :not(.live-room-background-bar):not(.remote-room-audio-list) { display: none !important; }
 .live-room-background-bar { display: flex; align-items: center; gap: 8px; padding: 10px; border: 1px solid #6841a6; border-radius: 16px; background: color-mix(in srgb, var(--surface) 96%, transparent); box-shadow: 0 12px 36px #0009; backdrop-filter: blur(18px); }

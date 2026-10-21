@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Crown, Gamepad2, Gift, Mic, MicOff, Share2, X } from 'lucide-react';
+import { ChevronDown, Crown, Gamepad2, Gift, Mic, MicOff, Share2, X } from 'lucide-react';
 import {
   getGiftCatalog,
   getProfile,
@@ -10,6 +10,7 @@ import {
   takeRoomSeat,
 } from '../api.js';
 import { useAuth } from '../../context/AuthContext.jsx';
+import FloatingPlayer from '../components/FloatingPlayer.jsx';
 import socket from '../socket.js';
 
 const GIFT_CATEGORIES = ['Hot', 'Lucky', 'Luxury', 'Intimacy'];
@@ -28,6 +29,7 @@ const turnUrls = (import.meta.env.VITE_TURN_URLS || '')
 
 const ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
   ...(turnUrls.length
     ? [{
         urls: turnUrls,
@@ -35,6 +37,16 @@ const ICE_SERVERS = [
         ...(import.meta.env.VITE_TURN_CREDENTIAL ? { credential: import.meta.env.VITE_TURN_CREDENTIAL } : {}),
       }]
     : []),
+  {
+    urls: 'turn:openrelay.metered.ca:80',
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
+  },
+  {
+    urls: 'turn:openrelay.metered.ca:443',
+    username: 'openrelayproject',
+    credential: 'openrelayproject',
+  },
 ];
 
 const getPeerId = (payload) => {
@@ -64,6 +76,9 @@ function RemoteAudio({ stream, onPlaybackBlocked }) {
 
 export default function LiveRoomPage({
   roomId,
+  isMinimized = false,
+  onMinimize = () => {},
+  onRestore = () => {},
   onClose = () => {},
 }) {
   const { user, updateRoom, updateRoomStatus } = useAuth();
@@ -208,6 +223,8 @@ export default function LiveRoomPage({
     roomActiveRef.current = true;
     const peers = new Map();
     const pendingCandidates = new Map();
+    const restartTimers = new Map();
+    const restartAttempts = new Map();
 
     const setPeerStream = (peerId, stream) => {
       const connected = peers.get(peerId)?.connectionState === 'connected';
@@ -229,6 +246,10 @@ export default function LiveRoomPage({
     const removePeer = (peerId) => {
       const connection = peers.get(peerId);
       if (connection) {
+        const timer = restartTimers.get(peerId);
+        if (timer) window.clearTimeout(timer);
+        restartTimers.delete(peerId);
+        restartAttempts.delete(peerId);
         connection.onicecandidate = null;
         connection.ontrack = null;
         connection.onconnectionstatechange = null;
@@ -247,6 +268,49 @@ export default function LiveRoomPage({
         from: socket.id,
         [field]: value,
       });
+    };
+
+    const restartPeerConnection = async (peerId) => {
+      const connection = peers.get(peerId);
+      if (!connection || connection.connectionState === 'connected' ||
+          connection.connectionState === 'closed' || !localStreamRef.current) return;
+      if (socket.id > peerId) return;
+
+      const attempts = restartAttempts.get(peerId) || 0;
+      if (attempts >= 5) {
+        setError('Audio connection failed after several retries. Check your network and try again.');
+        return;
+      }
+      restartAttempts.set(peerId, attempts + 1);
+
+      try {
+        if (connection.signalingState !== 'stable') {
+          throw new Error('Peer signaling is still negotiating.');
+        }
+        connection.restartIce?.();
+        const offer = await connection.createOffer({ iceRestart: true });
+        await connection.setLocalDescription(offer);
+        sendSignal('offer', peerId, 'offer', connection.localDescription);
+      } catch (restartError) {
+        const retryDelay = Math.min(1000 * (2 ** attempts), 10000);
+        const timer = window.setTimeout(() => {
+          restartTimers.delete(peerId);
+          restartPeerConnection(peerId);
+        }, retryDelay);
+        restartTimers.set(peerId, timer);
+        if (attempts === 0) {
+          setError(`Audio connection interrupted; retrying. ${restartError.message}`);
+        }
+      }
+    };
+
+    const schedulePeerRestart = (peerId, delay = 0) => {
+      if (restartTimers.has(peerId)) return;
+      const timer = window.setTimeout(() => {
+        restartTimers.delete(peerId);
+        restartPeerConnection(peerId);
+      }, delay);
+      restartTimers.set(peerId, timer);
     };
 
     const createPeer = (peerId) => {
@@ -271,8 +335,14 @@ export default function LiveRoomPage({
       connection.onconnectionstatechange = () => {
         updatePeerState(peerId, connection.connectionState === 'connected');
         if (connection.connectionState === 'failed') {
-          setError('Could not connect to a room participant. Check the network or configure a TURN server.');
+          schedulePeerRestart(peerId);
+        } else if (connection.connectionState === 'disconnected') {
+          schedulePeerRestart(peerId, 4000);
         } else if (connection.connectionState === 'connected') {
+          const timer = restartTimers.get(peerId);
+          if (timer) window.clearTimeout(timer);
+          restartTimers.delete(peerId);
+          restartAttempts.delete(peerId);
           setError('');
         } else if (connection.connectionState === 'closed') {
           removePeer(peerId);
@@ -358,6 +428,9 @@ export default function LiveRoomPage({
     const onDisconnect = () => {
       if (!disconnectingRef.current) setStatus('reconnecting');
       peers.forEach((connection) => connection.close());
+      restartTimers.forEach((timer) => window.clearTimeout(timer));
+      restartTimers.clear();
+      restartAttempts.clear();
       peers.clear();
       pendingCandidates.clear();
       setRemotePeers([]);
@@ -716,7 +789,17 @@ export default function LiveRoomPage({
       : 1);
 
   return (
-    <main className="live-room-page">
+    <main className={`live-room-page${isMinimized ? ' is-minimized' : ''}`}>
+      {isMinimized && (
+        <FloatingPlayer
+          title={room?.title}
+          status={statusLabel}
+          micEnabled={micEnabled}
+          onRestore={onRestore}
+          onToggleMicrophone={toggleMicrophone}
+          onClose={leaveRoom}
+        />
+      )}
       <header className="live-room-header">
         <div className="live-room-heading">
           <div className="live-room-host-identity">
@@ -772,6 +855,9 @@ export default function LiveRoomPage({
             )}
             <button className="button button-secondary" type="button" onClick={shareRoom} aria-label="Share room">
               <Share2 size={16} /> Share
+            </button>
+            <button className="button button-secondary room-minimize-button" type="button" onClick={onMinimize} aria-label="Minimize room">
+              <ChevronDown size={17} /> Minimize
             </button>
             <button className="button button-danger room-close-button" type="button" onClick={leaveRoom} aria-label="Close room">
               <X size={17} />
