@@ -1,4 +1,4 @@
-import { ChevronRight, Copy } from 'lucide-react';
+import { Building2, ChevronRight, Copy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const number = (value) => (Number(value) || 0).toLocaleString();
@@ -10,13 +10,11 @@ export default function ProfileHeader({ profile, onCopy }) {
   const picture = profile.profilePicture || profile.avatar || profile.picture;
   const publicId = String(profile.publicId || profile.userId || profile._id || profile.id || '');
   const role = String(profile.role || '').toUpperCase();
-  const agencyReference = profile.agencyId;
-  const agencyName = profile.agencyName || agencyReference?.agencyName || agencyReference?.name ||
-    (typeof agencyReference === 'object' ? agencyReference?._id || agencyReference?.id || '' : agencyReference) || '';
+  const belongsToAgency = Boolean(profile.agencyId || profile.agency);
   const isAgent = profile.isAgent === true || role === 'AGENT';
   const isHost = !isAgent && (profile.isHost === true || role === 'HOST');
   const displayName = profile.fullName || profile.name || profile.username || 'Meso Live member';
-  const genderAge = [profile.gender, profile.age ? `${profile.age}` : ''].filter(Boolean).join(' · ') || 'Gender / Age';
+  const genderBadge = profile.gender === 'Male' ? '♂️ Male' : profile.gender === 'Female' ? '♀️ Female' : profile.gender ? '⚧ Other' : '';
   const wealthLevel = profile.wealthLevel?.level || profile.wealthLevel || 1;
   const charmLevel = profile.charmLevel?.level || profile.charmLevel || 1;
   const editProfile = () => navigate('/profile/edit');
@@ -41,7 +39,9 @@ export default function ProfileHeader({ profile, onCopy }) {
             {publicId && <button className="profile-copy-button" type="button" aria-label="Copy user ID" onClick={(event) => { event.stopPropagation(); onCopy(publicId); }}><Copy size={13} /></button>}
           </div>
           <div className="profile-badges" aria-label="Profile badges">
-            {agencyName && <span className="profile-pill profile-agency-badge">{agencyName}</span>}
+            {belongsToAgency && <span className="profile-pill profile-agency-badge"><Building2 size={12} aria-hidden="true" /> AGENCY</span>}
+            {profile.country && <span className="profile-pill">{profile.countryFlag || ''} {profile.country}</span>}
+            {genderBadge && <span className="profile-pill">{genderBadge}</span>}
             {isHost && <span className="profile-pill profile-host-badge">Host</span>}
             <span className="profile-pill">Wealth Lv {wealthLevel}</span>
             <span className="profile-pill">Charm Lv {charmLevel}</span>
