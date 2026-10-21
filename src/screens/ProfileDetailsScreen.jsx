@@ -1,4 +1,4 @@
-import { Edit3, MapPin, MessageCircle, ShieldCheck } from 'lucide-react';
+import { Copy, Edit3, MessageCircle, ShieldCheck } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getProfile, getUserProfile } from '../api.js';
@@ -22,6 +22,7 @@ export default function ProfileDetailsScreen() {
   const [profile, setProfile] = useState(null);
   const [viewer, setViewer] = useState(null);
   const [error, setError] = useState('');
+  const [copyStatus, setCopyStatus] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -48,9 +49,21 @@ export default function ProfileDetailsScreen() {
 
   const picture = imageOf(profile);
   const displayName = profile.name || profile.username || 'Meso Live member';
-  const publicId = profile.publicId || profile._id;
+  const publicId = profile.customId || profile.publicId || profile.id || profile._id;
   const roomId = profile.roomId;
-  const age = calculateAge(profile.birthday);
+  const age = profile.age ?? calculateAge(profile.birthday);
+  const agencyName = profile.agencyName || profile.agencyId?.name || '';
+  const isHost = profile.isHost === true || String(profile.role || '').toLowerCase() === 'host';
+  const wealthLevel = profile.wealthLevel?.level || profile.wealthLevel || profile.level || 1;
+  const charmLevel = profile.charmLevel?.level || profile.charmLevel || 1;
+  const copyId = async () => {
+    try {
+      await navigator.clipboard.writeText(String(publicId));
+      setCopyStatus('User ID copied.');
+    } catch {
+      setCopyStatus('Could not copy User ID.');
+    }
+  };
 
   return (
     <Page
@@ -66,18 +79,21 @@ export default function ProfileDetailsScreen() {
           </span>
           <div className="profile-details-copy">
             <h2>{displayName}</h2>
-            <p className="profile-id-row">ID: <strong>{publicId}</strong></p>
+            <p className="profile-id-row">ID: <strong>{publicId}</strong><button className="profile-copy-button" type="button" onClick={copyId} aria-label="Copy user ID"><Copy size={13} /></button></p>
             {!isOwnProfile && <span className={`profile-status-badge status-${String(profile.status || 'OFFLINE').toLowerCase()}`}><i /> {profile.status || 'OFFLINE'}</span>}
           </div>
         </div>
         <div className="profile-badges profile-details-badges">
+          {profile.countryFlag && <span className="profile-pill">{profile.countryFlag} {profile.country || ''}</span>}
+          {profile.gender && age !== null && <span className="profile-pill">{profile.gender === 'Male' ? '♂' : profile.gender === 'Female' ? '♀' : '⚧'} {age}</span>}
+          {agencyName && <span className="profile-pill profile-agency-badge">{agencyName}</span>}
+          {isHost && <span className="profile-pill profile-host-badge">Host</span>}
           {profile.isVip && <span className="profile-pill">VIP</span>}
           {profile.isVerified && <span className="profile-pill"><ShieldCheck size={12} /> Verified</span>}
-          <span className="profile-pill">Level {profile.level || profile.wealthLevel?.level || 1}</span>
-          {profile.gender && <span className="profile-pill">{profile.gender}</span>}
-          {age !== null && <span className="profile-pill">Age {age}</span>}
-          {profile.country && <span className="profile-pill"><MapPin size={12} /> {profile.country}</span>}
+          <span className="profile-pill">Wealth Lv {wealthLevel}</span>
+          <span className="profile-pill">Charm Lv {charmLevel}</span>
         </div>
+        {copyStatus && <p className="profile-copy-status" role="status">{copyStatus}</p>}
         <p className="profile-signature">{profile.bio || 'No signature yet.'}</p>
       </section>
 

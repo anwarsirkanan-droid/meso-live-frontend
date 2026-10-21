@@ -538,7 +538,8 @@ button { color: inherit; }
 .profile-display-name { margin: 0; font: 800 22px Manrope; }
 .profile-badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
 .profile-pill { display: inline-flex; align-items: center; padding: 4px 8px; border: 1px solid var(--border); border-radius: 99px; color: var(--muted); background: var(--surface-raised); font-size: 10px; font-weight: 700; white-space: nowrap; }
-.profile-agency-badge { color: #d9c3ff; border-color: #7653a5; background: #392750; }
+.profile-agency-badge { color: #d9ffd9; border-color: #2c9a68; background: #174a35; }
+.profile-host-badge { color: #fff; border-color: #ff9f68; background: linear-gradient(135deg, #ff7a59, #b72cff 55%, #5d5cf6); box-shadow: 0 3px 10px #9d3cf155; }
 .role-badge, .level-badge { display: inline-flex; align-items: center; padding: 5px 9px; border-radius: 99px; font-size: 10px; font-weight: 800; }
 .role-user { color: #bdb5c9; background: #38323e; } .role-host { color: #ffd276; background: #4a351b; } .role-agent { color: #9ee9c1; background: #183c2d; } .role-admin { color: #ff9da8; background: #48202c; }
 .level-badge { color: #dccbff; background: #392750; }

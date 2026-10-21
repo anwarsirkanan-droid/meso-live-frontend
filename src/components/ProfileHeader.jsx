@@ -10,6 +10,8 @@ export default function ProfileHeader({ profile, onCopy }) {
   const picture = profile.profilePicture || profile.avatar || profile.picture;
   const publicId = String(profile.publicId || profile.userId || profile._id || profile.id || '');
   const role = String(profile.role || '').toUpperCase();
+  const agencyName = profile.agencyName || profile.agencyId?.name || '';
+  const isHost = profile.isHost === true || role === 'HOST';
   const displayName = profile.fullName || profile.name || profile.username || 'Meso Live member';
   const genderAge = [profile.gender, profile.age ? `${profile.age}` : ''].filter(Boolean).join(' · ') || 'Gender / Age';
   const wealthLevel = profile.wealthLevel?.level || profile.wealthLevel || 1;
@@ -31,15 +33,13 @@ export default function ProfileHeader({ profile, onCopy }) {
         </span>
         <div className="profile-header-main">
           <h2 className="profile-display-name">{displayName}</h2>
-          <div className="profile-badges" aria-label="Profile badges">
-            <span className="profile-pill">{genderAge}</span>
-            <span className="profile-pill">Wealth Lv {wealthLevel}</span>
-            <span className="profile-pill">Charm Lv {charmLevel}</span>
-            {role === 'AGENT' && <span className="profile-pill profile-agency-badge">AGENCY</span>}
-          </div>
           <div className="profile-id-row">
             <span>ID: <strong>{publicId || 'Not assigned'}</strong></span>
             {publicId && <button className="profile-copy-button" type="button" aria-label="Copy user ID" onClick={(event) => { event.stopPropagation(); onCopy(publicId); }}><Copy size={13} /></button>}
+          </div>
+          <div className="profile-badges" aria-label="Profile badges">
+            {agencyName && <span className="profile-pill profile-agency-badge">{agencyName}</span>}
+            {isHost && <span className="profile-pill profile-host-badge">Host</span>}
           </div>
         </div>
         <button
