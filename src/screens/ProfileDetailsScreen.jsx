@@ -88,7 +88,9 @@ export default function ProfileDetailsScreen() {
   const publicId = profile.customId || profile.publicId || profile.id || profile._id;
   const roomId = profile.roomId;
   const age = profile.age ?? calculateAge(profile.birthday);
-  const agencyName = profile.agencyName || profile.agencyId?.name || profile.agencyId || '';
+  const agencyReference = profile.agencyId;
+  const agencyName = profile.agencyName || agencyReference?.agencyName || agencyReference?.name ||
+    (typeof agencyReference === 'object' ? agencyReference?._id || agencyReference?.id || '' : agencyReference) || '';
   const isAgent = profile.isAgent === true || String(profile.role || '').toLowerCase() === 'agent';
   const isHost = !isAgent && (profile.isHost === true || String(profile.role || '').toLowerCase() === 'host');
   const wealthLevel = profile.wealthLevel?.level || profile.wealthLevel || profile.level || 1;
@@ -133,8 +135,9 @@ export default function ProfileDetailsScreen() {
         )}
         {followError && <p className="form-error" role="alert">{followError}</p>}
         <div className="profile-badges profile-details-badges">
-          {profile.countryFlag && <span className="profile-pill">{profile.countryFlag} {profile.country || ''}</span>}
-          {profile.gender && age !== null && <span className="profile-pill">{profile.gender === 'Male' ? '♂' : profile.gender === 'Female' ? '♀' : '⚧'} {age}</span>}
+          {profile.country && <span className="profile-pill">{profile.countryFlag || ''} {profile.country}</span>}
+          {profile.gender && <span className="profile-pill">{profile.gender === 'Male' ? '♂️ Male' : profile.gender === 'Female' ? '♀️ Female' : '⚧ Other'}</span>}
+          {age !== null && <span className="profile-pill">Age {age}</span>}
           {agencyName && <span className="profile-pill profile-agency-badge">{agencyName}</span>}
           {isHost && <span className="profile-pill profile-host-badge">Host</span>}
           {profile.isVip && <span className="profile-pill">VIP</span>}

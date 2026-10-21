@@ -10,7 +10,9 @@ export default function ProfileHeader({ profile, onCopy }) {
   const picture = profile.profilePicture || profile.avatar || profile.picture;
   const publicId = String(profile.publicId || profile.userId || profile._id || profile.id || '');
   const role = String(profile.role || '').toUpperCase();
-  const agencyName = profile.agencyName || profile.agencyId?.name || profile.agencyId || '';
+  const agencyReference = profile.agencyId;
+  const agencyName = profile.agencyName || agencyReference?.agencyName || agencyReference?.name ||
+    (typeof agencyReference === 'object' ? agencyReference?._id || agencyReference?.id || '' : agencyReference) || '';
   const isAgent = profile.isAgent === true || role === 'AGENT';
   const isHost = !isAgent && (profile.isHost === true || role === 'HOST');
   const displayName = profile.fullName || profile.name || profile.username || 'Meso Live member';
@@ -41,6 +43,8 @@ export default function ProfileHeader({ profile, onCopy }) {
           <div className="profile-badges" aria-label="Profile badges">
             {agencyName && <span className="profile-pill profile-agency-badge">{agencyName}</span>}
             {isHost && <span className="profile-pill profile-host-badge">Host</span>}
+            <span className="profile-pill">Wealth Lv {wealthLevel}</span>
+            <span className="profile-pill">Charm Lv {charmLevel}</span>
           </div>
         </div>
         <button
