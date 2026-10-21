@@ -56,7 +56,7 @@ export default function AdminDashboard() {
                         <small className="muted">Phone: {application.phoneNumber}</small>
                       </div>
                     </div>
-                    <p>{application.experience}</p>
+                    <p>{application.description || application.experience}</p>
                     <p className="muted">Agent experience proof:</p>
                     <img
                       src={application.proofDataUrl}

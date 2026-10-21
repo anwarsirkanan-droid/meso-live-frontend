@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
   acceptAgencyInvitation,
-  applyForAgency,
   getPendingAgencyInvitations,
   getProfile,
   joinAgency,
@@ -9,6 +8,7 @@ import {
   requestAgencyRelease,
 } from '../api.js';
 import CameraFaceVerification from '../components/CameraFaceVerification.jsx';
+import CreateAgencyModal from '../components/CreateAgencyModal.jsx';
 import { Card, ErrorMessage, Loading, Page } from '../components/UI.jsx';
 
 const roleIsAgent = (user) =>
@@ -25,9 +25,7 @@ export default function HostCenterScreen() {
   const [invitations, setInvitations] = useState([]);
   const [agencyId, setAgencyId] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
-  const [agencyName, setAgencyName] = useState('');
-  const [experience, setExperience] = useState('');
-  const [proof, setProof] = useState(null);
+  const [agencyModalOpen, setAgencyModalOpen] = useState(false);
   const [releasePending, setReleasePending] = useState(false);
   const [status, setStatus] = useState({ error: '', message: '', saving: false });
 
@@ -50,7 +48,6 @@ export default function HostCenterScreen() {
 
   const isAgent = roleIsAgent(profile);
   const hasAgency = Boolean(profile?.agencyId);
-  const isExistingHost = hasAgency && roleIsHost(profile);
   const canJoinAgency = !hasAgency && !isAgent;
   const canApplyToBecomeAgent = !isAgent;
   const canRequestRelease = hasAgency && !isAgent && roleIsHost(profile) && agencyIsApproved(profile);
@@ -71,32 +68,6 @@ export default function HostCenterScreen() {
       setStatus({ error: '', message: 'You joined the agency.', saving: false });
     } catch (error) {
       setStatus({ error: error.response?.data?.message || 'Could not join the agency.', message: '', saving: false });
-    }
-  };
-
-  const applyToBecomeAgent = async (event) => {
-    event.preventDefault();
-    const form = event.currentTarget;
-    if (!isExistingHost && !proof) {
-      setStatus({ error: 'Attach a screenshot proving your Agent experience.', message: '', saving: false });
-      return;
-    }
-    const application = new FormData();
-    application.append('agencyName', agencyName.trim());
-    application.append('phoneNumber', phoneNumber.trim());
-    application.append('experience', experience.trim());
-    if (proof) application.append('proof', proof);
-
-    setStatus({ error: '', message: '', saving: true });
-    try {
-      const response = await applyForAgency(application);
-      setStatus({ error: '', message: response.message || 'Agent application submitted.', saving: false });
-      setAgencyName('');
-      setExperience('');
-      setProof(null);
-      form.reset();
-    } catch (error) {
-      setStatus({ error: error.response?.data?.message || 'Could not submit the Agent application.', message: '', saving: false });
     }
   };
 
@@ -155,29 +126,10 @@ export default function HostCenterScreen() {
 
       {canApplyToBecomeAgent && (
         <Card title="Create / Become an Agent" className="settings-card">
-          <p className="muted">
-            {isExistingHost
-              ? 'Your application will be sent to your current Agent for approval.'
-              : 'Your application and proof will be sent to MESO LIVE Admin for review.'}
-          </p>
-          <form className="form-stack" onSubmit={applyToBecomeAgent}>
-            <label className="field"><span>Agency Name</span><input value={agencyName} onChange={(event) => setAgencyName(event.target.value)} maxLength={100} required disabled={status.saving} /></label>
-            <label className="field"><span>Phone / Contact Info</span><input value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value)} required disabled={status.saving} /></label>
-            <label className="field"><span>Experience Description</span><textarea value={experience} onChange={(event) => setExperience(event.target.value)} maxLength={2000} rows={4} required disabled={status.saving} /></label>
-            {!isExistingHost && (
-              <label className="field">
-                <span>Attach Proof / Screenshot of Agent Experience from other apps</span>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={(event) => setProof(event.target.files?.[0] || null)}
-                  required
-                  disabled={status.saving}
-                />
-              </label>
-            )}
-            <button className="button button-primary" type="submit" disabled={status.saving}>{status.saving ? 'Submitting…' : 'Submit Agent Application'}</button>
-          </form>
+          <p className="muted">Submit one agency application for approval.</p>
+          <button className="button button-primary" type="button" onClick={() => setAgencyModalOpen(true)}>
+            Create / Become an Agent
+          </button>
         </Card>
       )}
 
@@ -196,6 +148,17 @@ export default function HostCenterScreen() {
       </Card>
       {status.message && <p className="success-message" role="status">{status.message}</p>}
       <ErrorMessage>{status.error}</ErrorMessage>
+      {agencyModalOpen && (
+        <CreateAgencyModal
+          isExistingHost={Boolean(profile.agencyId)}
+          initialContact={phoneNumber}
+          onClose={() => setAgencyModalOpen(false)}
+          onSuccess={(message) => {
+            setAgencyModalOpen(false);
+            setStatus({ error: '', message, saving: false });
+          }}
+        />
+      )}
     </Page>
   );
 }
