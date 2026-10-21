@@ -10,7 +10,7 @@ export default function ProfileHeader({ profile, onCopy }) {
   const picture = profile.profilePicture || profile.avatar || profile.picture;
   const publicId = String(profile.publicId || profile.userId || profile._id || profile.id || '');
   const role = String(profile.role || '').toUpperCase();
-  const agencyName = profile.agencyName || profile.agencyId?.name || '';
+  const agencyName = profile.agencyName || profile.agencyId?.name || profile.agencyId || '';
   const isAgent = profile.isAgent === true || role === 'AGENT';
   const isHost = !isAgent && (profile.isHost === true || role === 'HOST');
   const displayName = profile.fullName || profile.name || profile.username || 'Meso Live member';
