@@ -1,28 +1,48 @@
-import { Maximize2, Mic, MicOff, X } from 'lucide-react';
+import React from 'react';
+import { Mic, MicOff } from 'lucide-react';
 
-export default function FloatingPlayer({ title, status, micEnabled, onRestore, onToggleMicrophone, onClose }) {
+export default function FloatingPlayer({
+  title = 'Live Room',
+  micEnabled = true,
+  onRestore = () => {},
+  onToggleMicrophone = () => {},
+  onClose = () => {},
+}) {
   return (
-    <div className="live-room-background-bar">
-      <button className="room-mini-control room-mini-title" type="button" onClick={onRestore} aria-label="Restore live room">
-        <span className="room-mini-live-indicator" aria-hidden="true" />
-        <span>{title || 'Live room'}</span>
-      </button>
-      <span className="live-room-background-status">{status}</span>
-      <button
-        className="room-mini-control room-mini-icon-control"
-        type="button"
-        onClick={onToggleMicrophone}
-        aria-label={micEnabled ? 'Mute microphone' : 'Unmute microphone'}
-        aria-pressed={!micEnabled}
-      >
-        {micEnabled ? <Mic size={15} /> : <MicOff size={15} />}
-      </button>
-      <button className="room-mini-control room-mini-icon-control" type="button" onClick={onRestore} aria-label="Restore live room">
-        <Maximize2 size={15} />
-      </button>
-      <button className="room-mini-control room-mini-close" type="button" onClick={onClose} aria-label="Leave room and close player">
-        <X size={16} />
-      </button>
+    <div
+      onClick={onRestore}
+      title="Restore Room"
+      style={{
+        position: 'fixed',
+        bottom: '90px',
+        right: '20px',
+        width: '56px',
+        height: '56px',
+        borderRadius: '50%',
+        background: 'linear-gradient(135deg, #a855f7, #ec4899)',
+        boxShadow: '0 6px 16px rgba(0,0,0,0.5)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 999999,
+        cursor: 'pointer',
+        border: '2px solid #f59e0b',
+        animation: 'pulse 2s infinite',
+      }}
+    >
+      <div
+        style={{
+          position: 'absolute',
+          top: '-2px',
+          right: '-2px',
+          width: '14px',
+          height: '14px',
+          borderRadius: '50%',
+          backgroundColor: '#10b981',
+          border: '2px solid #0f0f13',
+        }}
+      />
+      <span style={{ fontSize: '20px', color: '#fff' }}>🎙️</span>
     </div>
   );
 }
