@@ -1,236 +1,70 @@
-import { useEffect, useState } from 'react';
-import { Navigate, Outlet, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { getProfile } from '../api.js';
-import BottomNav from '../components/BottomNav.jsx';
-import Navbar from '../components/Navbar.jsx';
-import { useAuth } from '../../context/AuthContext.jsx';
-import AdminDashboard from '../pages/AdminDashboard.jsx';
-import AgencyCenterPage from '../pages/AgencyCenterPage.jsx';
-import AgencyCenterScreen from '../screens/AgencyCenterScreen.jsx';
-import AgencyDashboardScreen from '../pages/AgencyDashboardScreen.jsx';
-import DiceGamePage from '../pages/DiceGamePage.jsx';
-import FaceVerifyPage from '../pages/FaceVerifyPage.jsx';
+import React, { useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import HomeScreen from '../screens/HomeScreen.jsx';
-import HostWalletPage from '../pages/HostWalletPage.jsx';
-import InvitePage from '../pages/InvitePage.jsx';
 import LiveRoomPage from '../pages/LiveRoomPage.jsx';
-import Login from '../pages/Login.jsx';
-import MessagesPage from '../pages/MessagesPage.jsx';
-import MeScreen from '../screens/MeScreen.jsx';
-import ProfileDetailsScreen from '../screens/ProfileDetailsScreen.jsx';
-import EditProfileScreen from '../screens/EditProfileScreen.jsx';
-import LevelDetailsPage from '../pages/LevelDetailsPage.jsx';
-import TaskCenterScreen from '../screens/TaskCenterScreen.js';
-import HostRewardsScreen from '../screens/HostRewardsScreen.js';
-import HostCenterScreen from '../screens/HostCenterScreen.jsx';
-import ProfileSetup from '../pages/ProfileSetup.jsx';
-import RechargePage from '../pages/RechargePage.jsx';
 import Register from '../pages/Register.jsx';
+import ProfileSetup from '../pages/ProfileSetup.jsx';
 import SettingsPage from '../pages/SettingsPage.jsx';
-import { FollowersPage, FollowingPage, GiftHistoryPage, InvitePageView, MyStreamsPage, WithdrawalPage } from '../pages/ProfileUtilityPages.jsx';
-
-function ProtectedRoute({ adminOnly = false, allowIncomplete = false }) {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const { updateUser } = useAuth();
-  const token = localStorage.getItem('token');
-  const [retry, setRetry] = useState(0);
-  const [access, setAccess] = useState({ status: 'loading', token });
-
-  useEffect(() => {
-    if (!token) {
-      setAccess({ status: 'denied', token: null });
-      return;
-    }
-
-    let active = true;
-    setAccess({ status: 'loading', token });
-    getProfile()
-      .then((data) => {
-        if (active) {
-          const storedUser = (() => {
-            try {
-              return JSON.parse(localStorage.getItem('user') || '{}');
-            } catch {
-              return {};
-            }
-          })();
-          const profile = {
-            ...data,
-            ...(storedUser.hasActiveRoom ? {
-              hasActiveRoom: true,
-              roomId: storedUser.roomId,
-            } : {}),
-          };
-          updateUser(profile);
-          setAccess({ status: 'loaded', token, profile });
-        }
-      })
-      .catch((error) => {
-        if (active) {
-          const message = error.code === 'ECONNABORTED'
-            ? 'The profile request timed out. Check your connection and try again.'
-            : error.response?.data?.message || error.response?.data?.error || error.message;
-          setAccess({ status: 'error', token, message });
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [token, retry, updateUser]);
-
-  if (!token) return <Navigate to="/login" replace state={{ from: location }} />;
-  if (access.token !== token || access.status === 'loading') {
-    return <main className="page" aria-busy="true"><p className="muted" role="status">Loading your profile…</p></main>;
-  }
-  if (access.status === 'error') {
-    return (
-      <main className="page">
-        <div className="notice notice-error" role="alert">
-          <p>Could not load your profile: {access.message}</p>
-          <div className="room-controls">
-            <button className="button button-primary" type="button" onClick={() => setRetry((count) => count + 1)}>
-              Try again
-            </button>
-            <button
-              className="button button-secondary"
-              type="button"
-              onClick={() => {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                navigate('/login', { replace: true });
-              }}
-            >
-              Back to sign in
-            </button>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  const profile = access.profile;
-  if (allowIncomplete && profile?.profileComplete) return <Navigate to="/" replace />;
-  if (!allowIncomplete && !profile?.profileComplete) return <Navigate to="/profile-setup" replace />;
-  if (adminOnly && profile?.role !== 'ADMIN' && profile?.isAdmin !== true) {
-    return <Navigate to="/" replace />;
-  }
-
-  return <Outlet />;
-}
-
-function AppLayout() {
-  const location = useLocation();
-  const navigate = useNavigate();
-  const [activeRoomId, setActiveRoomId] = useState(() => {
-    const routeMatch = location.pathname.match(/^\/live\/([^/]+)/);
-    if (routeMatch) return decodeURIComponent(routeMatch[1]);
-    try {
-      return localStorage.getItem('mesoLive.activeRoomId') || '';
-    } catch {
-      return '';
-    }
-  });
-  const [roomMinimized, setRoomMinimized] = useState(() => !/^\/live\//.test(location.pathname));
-
-  useEffect(() => {
-    const routeMatch = location.pathname.match(/^\/live\/([^/]+)/);
-    if (!routeMatch) return;
-    const roomId = decodeURIComponent(routeMatch[1]);
-    setActiveRoomId(roomId);
-    setRoomMinimized(false);
-    localStorage.setItem('mesoLive.activeRoomId', roomId);
-  }, [location.pathname]);
-
-  const isRoomRoute = Boolean(activeRoomId) &&
-    location.pathname === `/live/${encodeURIComponent(activeRoomId)}`;
-  const closeRoom = () => {
-    setActiveRoomId('');
-    setRoomMinimized(false);
-    localStorage.removeItem('mesoLive.activeRoomId');
-    if (isRoomRoute) navigate('/', { replace: true });
-  };
-  const minimizeRoom = () => {
-    setRoomMinimized(true);
-    navigate('/', { replace: true });
-  };
-  const restoreRoom = () => {
-    setRoomMinimized(false);
-    if (activeRoomId) navigate(`/live/${encodeURIComponent(activeRoomId)}`);
-  };
-
-  return (
-    <div className="app-shell">
-      <Navbar />
-      <Outlet />
-      <BottomNav />
-      {activeRoomId && (
-        <LiveRoomPage
-          key={activeRoomId}
-          roomId={activeRoomId}
-          isMinimized={roomMinimized}
-          onMinimize={minimizeRoom}
-          onRestore={restoreRoom}
-          onClose={closeRoom}
-        />
-      )}
-    </div>
-  );
-}
-
-function LiveRoomRoute() {
-  const { roomId } = useParams();
-  return <div className="live-room-route-placeholder" data-room-id={roomId} />;
-}
-
-function LegacyRoomRedirect() {
-  const { roomId } = useParams();
-  return <Navigate to={`/live/${encodeURIComponent(roomId)}`} replace />;
-}
+import FloatingPlayer from '../components/FloatingPlayer.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 
 export default function AppRoutes() {
+  const { user } = useAuth();
+  
+  // Global Active Room State
+  const [activeRoomId, setActiveRoomId] = useState(null);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const [micEnabled, setMicEnabled] = useState(true);
+
+  const handleOpenRoom = (roomId) => {
+    setActiveRoomId(roomId);
+    setIsMinimized(false);
+  };
+
+  const handleCloseRoom = () => {
+    setActiveRoomId(null);
+    setIsMinimized(false);
+  };
+
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route element={<ProtectedRoute allowIncomplete />}>
+    <BrowserRouter>
+      {/* 1. Full Live Room Screen (Yoo Active Ta'e fi Minimized Ta'uu Dhiise) */}
+      {activeRoomId && !isMinimized && (
+        <LiveRoomPage
+          roomId={activeRoomId}
+          isMinimized={false}
+          onMinimize={() => setIsMinimized(true)}
+          onClose={handleCloseRoom}
+        />
+      )}
+
+      {/* 2. Floating Persistent Player (Yoo Active Room-ni Minimized Ta'e) */}
+      {activeRoomId && isMinimized && (
+        <FloatingPlayer
+          title="Live Voice Room"
+          micEnabled={micEnabled}
+          onRestore={() => setIsMinimized(false)}
+          onToggleMicrophone={() => setMicEnabled(!micEnabled)}
+          onClose={handleCloseRoom}
+        />
+      )}
+
+      {/* Main Page Navigation Routes */}
+      <Routes>
+        <Route 
+          path="/" 
+          element={
+            <HomeScreen 
+              onOpenRoom={handleOpenRoom} 
+              activeRoomId={activeRoomId} 
+            />
+          } 
+        />
+        <Route path="/register" element={<Register />} />
         <Route path="/profile-setup" element={<ProfileSetup />} />
-      </Route>
-      <Route element={<ProtectedRoute />}>
-        <Route element={<AppLayout />}>
-          <Route path="/room/:roomId" element={<LegacyRoomRedirect />} />
-          <Route path="/live/:roomId" element={<LiveRoomRoute />} />
-          <Route path="/" element={<HomeScreen />} />
-          <Route path="/messages" element={<MessagesPage />} />
-          <Route path="/profile" element={<MeScreen />} />
-          <Route path="/profile/:userId" element={<ProfileDetailsScreen />} />
-          <Route path="/profile/levels" element={<LevelDetailsPage />} />
-          <Route path="/tasks" element={<TaskCenterScreen />} />
-          <Route path="/host-center" element={<HostCenterScreen />} />
-          <Route path="/host-rewards" element={<HostRewardsScreen />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/profile/settings" element={<SettingsPage />} />
-          <Route path="/profile/wallet" element={<HostWalletPage />} />
-          <Route path="/profile/agency" element={<AgencyCenterScreen />} />
-          <Route path="/profile/agency-dashboard" element={<AgencyDashboardScreen />} />
-          <Route path="/profile/invite" element={<InvitePage />} />
-          <Route path="/profile/face-verify" element={<FaceVerifyPage />} />
-          <Route path="/profile/recharge" element={<RechargePage />} />
-          <Route path="/profile/edit" element={<EditProfileScreen />} />
-          <Route path="/profile/followers" element={<FollowersPage />} />
-          <Route path="/profile/following" element={<FollowingPage />} />
-          <Route path="/profile/streams" element={<MyStreamsPage />} />
-          <Route path="/profile/gifts" element={<GiftHistoryPage />} />
-          <Route path="/profile/withdrawal" element={<WithdrawalPage />} />
-          <Route path="/profile/invite-new" element={<InvitePageView />} />
-          <Route path="/games/dice" element={<DiceGamePage />} />
-          <Route element={<ProtectedRoute adminOnly />}>
-            <Route path="/admin" element={<AdminDashboard />} />
-          </Route>
-        </Route>
-      </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="/settings" element={<SettingsPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
