@@ -618,32 +618,6 @@ export default function LiveRoomPage({
     setChatDraft('');
   };
 
-  const saveAnnouncement = (event) => {
-    event.preventDefault();
-    const text = announcementDraft.trim();
-    localStorage.setItem(`room:${roomId}:announcement`, text);
-    setAnnouncement(text);
-    setEditingAnnouncement(false);
-  };
-
-  const shareRoom = async () => {
-    const url = `${window.location.origin}/live/${encodeURIComponent(roomId)}`;
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: room?.title || 'Meso Live room', url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        setWarning('Room link copied to clipboard.');
-      }
-    } catch (shareError) {
-      if (shareError.name !== 'AbortError') {
-        setRoomActionError(`Could not share this room: ${shareError.message}`);
-      }
-    }
-  };
-
-  const chooseEmoji = (emoji) => setChatDraft((current) => `${current}${emoji}`);
-
   const toggleMicrophone = () => {
     const enabled = !micEnabled;
     localStreamRef.current?.getAudioTracks().forEach((track) => {
@@ -652,45 +626,14 @@ export default function LiveRoomPage({
     setMicEnabled(enabled);
   };
 
-  const enableRemoteAudio = () => {
-    document.querySelectorAll('audio.remote-room-audio').forEach((audio) => {
-      audio.play()
-        .then(() => setPlaybackBlocked(false))
-        .catch((playError) => {
-          setError(`Could not play incoming room audio: ${playError.message}`);
-          setPlaybackBlocked(true);
-        });
-    });
-  };
-
   const currentUserId = String(profile?._id || profile?.id || '');
   const ownerId = String(room?.ownerId?._id || room?.ownerId?.id || room?.ownerId || '');
   const host = room?.ownerId && typeof room.ownerId === 'object' ? room.ownerId : null;
-  const roomSeats = useMemo(() => Array.from({ length: 25 }, (_, seatIndex) =>
+  
+  // Updated to 24 seats (0 to 23)
+  const roomSeats = useMemo(() => Array.from({ length: 24 }, (_, seatIndex) =>
     room?.seats?.find((seat) => seat.seatIndex === seatIndex) || { seatIndex, userId: null },
   ), [room]);
-  const ownSeat = roomSeats.find((seat) => {
-    const seatedUserId = String(seat.userId?._id || seat.userId?.id || seat.userId || '');
-    return currentUserId && seatedUserId === currentUserId;
-  });
-  const giftRecipients = useMemo(() => [
-    ...(ownerId && ownerId !== currentUserId
-      ? [{ id: ownerId, name: host?.username || 'Room host' }]
-      : []),
-    ...roomSeats.flatMap((seat) => {
-      const user = seat.userId && typeof seat.userId === 'object' ? seat.userId : null;
-      const id = String(user?._id || user?.id || seat.userId || '');
-      if (!id || id === currentUserId || id === ownerId) return [];
-      return [{ id, name: user?.username || `Mic ${seat.seatIndex + 1}` }];
-    }),
-  ], [currentUserId, host?.username, ownerId, roomSeats]);
-
-  useEffect(() => {
-    if (selectedReceiverId === 'all') return;
-    if (giftRecipients.length && !giftRecipients.some(({ id }) => id === selectedReceiverId)) {
-      setSelectedReceiverId(giftRecipients[0].id);
-    }
-  }, [giftRecipients, selectedReceiverId]);
 
   const changeSeat = async (seat) => {
     setRoomActionBusy(true);
@@ -727,40 +670,6 @@ export default function LiveRoomPage({
     }
   };
 
-  const giftSelectedUser = async () => {
-    setGiftBusy(true);
-    setGiftError('');
-    setGiftFeedback('');
-    try {
-      const activeSeatRecipients = roomSeats.flatMap((seat) => {
-        const user = seat.userId && typeof seat.userId === 'object' ? seat.userId : null;
-        const id = String(user?._id || user?.id || seat.userId || '');
-        return id && id !== currentUserId ? [id] : [];
-      });
-      const receiverIds = selectedReceiverId === 'all'
-        ? [...new Set(activeSeatRecipients)]
-        : [selectedReceiverId];
-      if (!receiverIds.length) throw new Error('There are no occupied seats to receive this gift.');
-      let result;
-      for (const receiverId of receiverIds) {
-        result = await sendGift({
-          roomId,
-          receiverId,
-          giftId: selectedGiftId,
-          quantity: giftQuantity,
-        });
-      }
-      if (result?.senderBalance != null) {
-        setProfile((current) => current ? { ...current, coins: result.senderBalance } : current);
-      }
-      setGiftFeedback(result?.message || `Gift sent ${giftQuantity} time${giftQuantity === 1 ? '' : 's'}.`);
-    } catch (requestError) {
-      setGiftError(requestError.response?.data?.error || requestError.response?.data?.message || requestError.message);
-    } finally {
-      setGiftBusy(false);
-    }
-  };
-
   const hostName = host?.username;
   const hostPublicId = host?.publicId || host?.customId;
   const joined = status === 'connected' || status === 'reconnecting';
@@ -775,8 +684,24 @@ export default function LiveRoomPage({
   }[status];
 
   return (
-    <main className={`live-room-page ${isMinimized ? 'is-minimized' : ''}`}>
-      <div className="live-room-bg-overlay" />
+    <main style={{
+      position: 'relative',
+      width: '100%',
+      minHeight: '100vh',
+      backgroundColor: '#0f0f13',
+      color: '#ffffff',
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'space-between',
+      overflowX: 'hidden',
+      fontFamily: 'sans-serif'
+    }}>
+      <div style={{
+        position: 'absolute',
+        inset: 0,
+        background: 'radial-gradient(circle at top, #2a1b4e 0%, #0f0f13 70%)',
+        zIndex: 0
+      }} />
 
       {isMinimized && (
         <FloatingPlayer
@@ -790,44 +715,74 @@ export default function LiveRoomPage({
       )}
 
       {/* Clean Header */}
-      <header className="flex items-center justify-between p-3 absolute top-0 left-0 w-full z-10">
-        <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-white">
+      <header style={{
+        position: 'relative',
+        zIndex: 10,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '12px 16px',
+        width: '100%'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          padding: '6px 12px',
+          borderRadius: '9999px',
+          border: '1px solid rgba(255, 255, 255, 0.1)'
+        }}>
           {host?.avatar || host?.profilePicture ? (
-            <img className="w-10 h-10 rounded-full border-2 border-yellow-400 object-cover" src={host.avatar || host.profilePicture} alt="" />
+            <img src={host.avatar || host.profilePicture} alt="" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #f59e0b' }} />
           ) : (
-            <span className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center font-bold text-white">
+            <span style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
               {hostName?.[0]?.toUpperCase() || 'M'}
             </span>
           )}
-          <div className="flex flex-col">
-            <span className="text-xs font-bold truncate max-w-[90px]">{hostName || room?.title || 'Live Room'}</span>
-            <span className="text-[10px] text-gray-300">ID: {hostPublicId || roomId.slice(0, 6)}</span>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <span style={{ fontSize: '12px', fontWeight: 'bold', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {hostName || room?.title || 'Live Room'}
+            </span>
+            <span style={{ fontSize: '10px', color: '#9ca3af' }}>ID: {hostPublicId || String(roomId).slice(0, 6)}</span>
           </div>
-          <button className="bg-pink-500 hover:bg-pink-600 text-white p-1 rounded-full text-xs ml-1" title="Follow">
+          <button style={{ backgroundColor: '#ec4899', color: '#fff', border: 'none', borderRadius: '50%', width: '20px', height: '20px', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: '4px' }}>
             +
           </button>
         </div>
 
-        {/* Top Right Controls */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center bg-black/30 backdrop-blur-md px-2 py-1 rounded-full text-xs text-yellow-400">
-            <span className="mr-1">👥</span>
-            <span>{Number(room?.membersCount) || 1}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ backgroundColor: 'rgba(0,0,0,0.4)', padding: '4px 10px', borderRadius: '9999px', fontSize: '12px', color: '#f59e0b' }}>
+            👥 {Number(room?.membersCount) || 1}
           </div>
-
-          <button onClick={onMinimize} className="p-2 bg-black/40 backdrop-blur-md rounded-full text-gray-300 hover:text-white">
+          <button onClick={onMinimize} style={{ backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', padding: '8px', borderRadius: '50%', cursor: 'pointer' }}>
             <ChevronDown size={16} />
           </button>
-          <button onClick={leaveRoom} className="p-2 bg-red-500/80 backdrop-blur-md rounded-full text-white hover:bg-red-600">
+          <button onClick={leaveRoom} style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', padding: '8px', borderRadius: '50%', cursor: 'pointer' }}>
             <X size={16} />
           </button>
         </div>
       </header>
 
-      {/* Voice Seats Grid (Circle Layout) */}
-      <section className="flex-1 w-full max-w-lg mx-auto px-4 pt-20 pb-4 overflow-y-auto z-0">
-        <div className="grid grid-cols-5 gap-y-5 gap-x-2 justify-items-center">
-          {roomSeats.slice(0, 20).map((seat, seatIndex) => {
+      {/* Voice Seats Grid (5 Columns Layout - 24 Seats) */}
+      <section style={{
+        position: 'relative',
+        zIndex: 5,
+        flex: 1,
+        width: '100%',
+        maxWidth: '480px',
+        margin: '0 auto',
+        padding: '16px 12px',
+        overflowY: 'auto'
+      }}>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(5, 1fr)',
+          gap: '16px 8px',
+          justifyItems: 'center',
+          alignItems: 'center'
+        }}>
+          {roomSeats.slice(0, 24).map((seat, seatIndex) => {
             const isHostSeat = seatIndex === 0;
             const seatedUser = seat.userId && typeof seat.userId === 'object' ? seat.userId : null;
 
@@ -835,36 +790,42 @@ export default function LiveRoomPage({
               <div
                 key={seatIndex}
                 onClick={() => changeSeat(seat)}
-                className="flex flex-col items-center justify-center relative cursor-pointer group"
+                style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}
               >
-                <div className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-transform active:scale-95 ${
-                  seatedUser 
-                    ? 'border-2 border-yellow-400 bg-black/60' 
-                    : 'bg-black/30 backdrop-blur-md border border-white/20 hover:border-white/50'
-                }`}>
+                <div style={{
+                  position: 'relative',
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: seatedUser ? '#1f2937' : 'rgba(255, 255, 255, 0.1)',
+                  border: seatedUser ? '2px solid #f59e0b' : '1px dashed rgba(255, 255, 255, 0.3)'
+                }}>
                   {seatedUser ? (
                     <>
                       <img 
                         src={seatedUser.avatar || seatedUser.profilePicture || "/default-avatar.png"} 
                         alt="" 
-                        className="w-full h-full rounded-full object-cover" 
+                        style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
                       />
-                      <div className="absolute bottom-0 right-0 bg-black/80 p-0.5 rounded-full text-[8px]">
-                        <Mic size={10} className="text-green-400" />
+                      <div style={{ position: 'absolute', bottom: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.8)', padding: '2px', borderRadius: '50%' }}>
+                        <Mic size={10} color="#10b981" />
                       </div>
                     </>
                   ) : (
-                    <span className="text-gray-300 text-xs font-semibold">
-                      {isHostSeat ? <Crown className="text-yellow-400" size={14} /> : (seatIndex + 1)}
+                    <span style={{ color: '#d1d5db', fontSize: '11px', fontWeight: 'bold' }}>
+                      {isHostSeat ? <Crown size={14} color="#f59e0b" /> : (seatIndex + 1)}
                     </span>
                   )}
 
                   {isHostSeat && seatedUser && (
-                    <span className="absolute -top-3 text-xs">👑</span>
+                    <span style={{ position: 'absolute', top: '-10px', fontSize: '12px' }}>👑</span>
                   )}
                 </div>
 
-                <span className="text-[10px] text-white/90 font-medium mt-1 truncate w-14 text-center">
+                <span style={{ fontSize: '10px', color: 'rgba(255, 255, 255, 0.9)', marginTop: '4px', textAlign: 'center', width: '56px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {seatedUser ? (seatedUser.username || 'User') : (isHostSeat ? 'Host' : `${seatIndex + 1}`)}
                 </span>
               </div>
@@ -872,18 +833,18 @@ export default function LiveRoomPage({
           })}
         </div>
 
-        {/* Chat and Announcements */}
-        <div className="mt-6 space-y-2">
+        {/* Floating Chat / Messages Section */}
+        <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
           {announcement && (
-            <div className="bg-black/40 backdrop-blur-md p-2 rounded-xl text-xs text-white border border-white/10">
-              <span className="text-yellow-400 font-bold">Announcement:</span> {announcement}
+            <div style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)', padding: '8px 12px', borderRadius: '12px', fontSize: '11px', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <span style={{ color: '#f59e0b', fontWeight: 'bold' }}>Announcement:</span> {announcement}
             </div>
           )}
 
-          <div className="max-h-36 overflow-y-auto space-y-1 text-xs bg-black/20 backdrop-blur-sm p-2 rounded-xl">
+          <div style={{ maxHeight: '120px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px', backgroundColor: 'rgba(0, 0, 0, 0.3)', padding: '8px 12px', borderRadius: '12px', fontSize: '11px' }}>
             {messages.slice(-5).map((msg) => (
-              <div key={msg.id || Math.random()} className="text-white/90">
-                <span className="font-bold text-pink-400">{msg.username}:</span> {msg.text}
+              <div key={msg.id || Math.random()} style={{ color: '#fff' }}>
+                <span style={{ fontWeight: 'bold', color: '#f472b6' }}>{msg.username}:</span> {msg.text}
               </div>
             ))}
           </div>
@@ -891,22 +852,31 @@ export default function LiveRoomPage({
       </section>
 
       {/* Bottom Control Bar */}
-      <footer className="p-3 bg-black/40 backdrop-blur-md flex items-center gap-2 w-full z-10">
-        <form onSubmit={sendChatMessage} className="flex-1 flex items-center bg-white/10 rounded-full px-3 py-1.5 border border-white/10">
+      <footer style={{
+        position: 'relative',
+        zIndex: 10,
+        padding: '12px 16px',
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        width: '100%'
+      }}>
+        <form onSubmit={sendChatMessage} style={{ flex: 1, display: 'flex', alignItems: 'center', backgroundColor: 'rgba(255, 255, 255, 0.1)', borderRadius: '9999px', padding: '6px 12px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
           <input
             type="text"
             placeholder="Say Hello..."
             value={chatDraft}
             onChange={(e) => setChatDraft(e.target.value)}
-            className="bg-transparent text-white text-xs w-full focus:outline-none placeholder-gray-400"
+            style={{ backgroundColor: 'transparent', border: 'none', outline: 'none', color: '#fff', fontSize: '12px', width: '100%' }}
           />
         </form>
 
-        <button onClick={toggleMicrophone} className="p-2.5 bg-white/10 hover:bg-white/20 rounded-full text-white">
-          {micEnabled ? <Mic size={16} /> : <MicOff size={16} className="text-red-400" />}
+        <button onClick={toggleMicrophone} style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', border: 'none', padding: '10px', borderRadius: '50%', color: '#fff', cursor: 'pointer' }}>
+          {micEnabled ? <Mic size={16} /> : <MicOff size={16} color="#f87171" />}
         </button>
 
-        <button onClick={() => setGiftsOpen(true)} className="p-2.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-white">
+        <button onClick={() => setGiftsOpen(true)} style={{ background: 'linear-gradient(to right, #a855f7, #ec4899)', border: 'none', padding: '10px', borderRadius: '50%', color: '#fff', cursor: 'pointer' }}>
           <Gift size={16} />
         </button>
       </footer>
