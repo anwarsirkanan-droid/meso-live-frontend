@@ -1,11 +1,15 @@
 import React from 'react';
-import AppRoutes from './routes/AppRoutes.jsx';
-import { AuthProvider } from './context/AuthContext.jsx';
+import { BrowserRouter as Router } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext'; // Path sirrii ta'e!
 
-export default function App() {
+function App() {
   return (
     <AuthProvider>
-      <AppRoutes />
+      <Router>
+        {/* Route fooyya'aani fi components kee as keessa jiru */}
+      </Router>
     </AuthProvider>
   );
 }
+
+export default App;
