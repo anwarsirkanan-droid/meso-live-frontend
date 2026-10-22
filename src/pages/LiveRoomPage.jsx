@@ -10,6 +10,7 @@ import {
 } from '../api.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import FloatingPlayer from '../components/FloatingPlayer.jsx';
+import LiveRoomHeader from '../components/LiveRoomHeader.jsx';
 import socket from '../socket.js';
 
 
@@ -354,35 +355,17 @@ export default function LiveRoomPage({
 
 
       {/* Header */}
-      <header style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'rgba(0,0,0,0.5)', padding: '4px 10px', borderRadius: '9999px', border: '1px solid rgba(255,255,255,0.1)' }}>
-          {host?.avatar ? (
-            <img src={host.avatar} alt="" style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
-          ) : (
-            <span style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: '#8b5cf6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
-              {host?.username?.[0]?.toUpperCase() || 'M'}
-            </span>
-          )}
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: '11px', fontWeight: 'bold' }}>{host?.username || room?.title || 'Live Room'}</span>
-            <span style={{ fontSize: '9px', color: '#9ca3af' }}>ID: {String(roomId).slice(0, 6)}</span>
-          </div>
-          {/* Self-follow fix: hide for host */}
-          {!isHost && (
-            <button onClick={handleFollow} style={{ backgroundColor: isFollowed ? '#10b981' : '#ec4899', color: '#fff', border: 'none', borderRadius: '9999px', padding: '3px 8px', fontSize: '10px', cursor: 'pointer', marginLeft: '4px', fontWeight: 'bold' }}>
-              {isFollowed ? '✓' : '+ Follow'}
-            </button>
-          )}
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button onClick={onMinimize} style={{ backgroundColor: 'rgba(0,0,0,0.5)', color: '#fff', border: 'none', padding: '8px', borderRadius: '50%', cursor: 'pointer' }}>
-            <ChevronDown size={18} />
-          </button>
-          <button onClick={leaveRoom} style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', padding: '8px', borderRadius: '50%', cursor: 'pointer' }}>
-            <X size={18} />
-          </button>
-        </div>
-      </header>
+      <LiveRoomHeader
+        room={room}
+        host={host}
+        hostPublicId={host?.publicId || String(roomId).slice(0, 6)}
+        statusLabel={statusLabel}
+        isMinimized={isMinimized}
+        onMinimize={onMinimize}
+        onClose={leaveRoom}
+        onFollow={!isHost ? handleFollow : undefined}
+        isFollowed={isFollowed}
+      />
 
 
       {/* 25 Voice Seats Grid */}

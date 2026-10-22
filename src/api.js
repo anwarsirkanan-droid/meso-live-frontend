@@ -16,7 +16,10 @@ API.interceptors.request.use((config) => {
 });
 
 const dataFrom = (response) => response.data;
-
+export const setRoomPassword = async (roomId, password) => {
+  const response = await API.post(`/rooms/${roomId}/password`, { password });
+  return response.data;
+};
 export const login = (credentials) => API.post('/auth/login', credentials).then(dataFrom);
 export const register = (details) => API.post('/auth/register', details).then(dataFrom);
 export const googleLogin = (credential) =>
