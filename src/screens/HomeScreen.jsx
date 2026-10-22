@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { createRoom, getActiveRooms } from '../api.js';
+import { getActiveRooms, createRoom } from '../api.js';
 
-export default function HomeScreen({ onOpenRoom, activeRoomId }) {
+export default function HomeScreen({ onOpenRoom }) {
   const [liveRooms, setLiveRooms] = useState([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchRooms();
+    fetchLiveRooms();
   }, []);
 
-  const fetchRooms = async () => {
+  const fetchLiveRooms = async () => {
     try {
       const rooms = await getActiveRooms();
       setLiveRooms(Array.isArray(rooms) ? rooms : []);
@@ -18,23 +18,22 @@ export default function HomeScreen({ onOpenRoom, activeRoomId }) {
     }
   };
 
-  // FAB Mic Click -> Create Room and Join Immediately
+  // Mic button ykn start live click yeroo godhamu room uumamee ni saaqama
   const handleStartLive = async () => {
     try {
       setLoading(true);
       const res = await createRoom({
-        title: "My Live Party Room",
+        title: "Live Party Room",
         category: "For You"
       });
-      
       const newRoomId = res?.room?._id || res?._id;
       if (newRoomId) {
-        onOpenRoom(newRoomId); // Room guututti saaqqa
-        fetchRooms();
+        onOpenRoom(newRoomId);
+        fetchLiveRooms();
       }
     } catch (err) {
-      console.error("Could not start live room:", err);
-      alert(err.response?.data?.message || "Failed to start live room");
+      console.error("Failed to create room:", err);
+      alert("Room uumuu hin danda'amne.");
     } finally {
       setLoading(false);
     }
@@ -43,8 +42,14 @@ export default function HomeScreen({ onOpenRoom, activeRoomId }) {
   return (
     <div style={{ position: 'relative', minHeight: '100vh', backgroundColor: '#090a10', color: '#fff', padding: '16px' }}>
       
+      {/* Top Header / Categories */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+        <span style={{ fontWeight: 'bold', borderBottom: '2px solid #ec4899', paddingBottom: '4px' }}>Party</span>
+      </div>
+
       <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '12px' }}>Live rooms</h3>
-      
+
+      {/* Active Live Rooms List or Fallback Card */}
       {liveRooms.length === 0 ? (
         <div style={{
           backgroundColor: '#161822',
@@ -54,17 +59,18 @@ export default function HomeScreen({ onOpenRoom, activeRoomId }) {
           marginTop: '12px',
           border: '1px solid rgba(255,255,255,0.05)'
         }}>
-          <p style={{ color: '#9ca3af', marginBottom: '12px' }}>No live hosts yet</p>
+          <p style={{ color: '#9ca3af', marginBottom: '12px', fontSize: '13px' }}>No live hosts yet</p>
           <button 
             onClick={handleStartLive}
             style={{
               backgroundColor: '#ec4899',
               color: '#fff',
               border: 'none',
-              padding: '10px 20px',
+              padding: '8px 18px',
               borderRadius: '9999px',
               cursor: 'pointer',
-              fontWeight: 'bold'
+              fontWeight: 'bold',
+              fontSize: '12px'
             }}
           >
             Start Live Now
@@ -84,7 +90,9 @@ export default function HomeScreen({ onOpenRoom, activeRoomId }) {
                 border: '1px solid rgba(255,255,255,0.08)'
               }}
             >
-              <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{room.title}</div>
+              <div style={{ fontWeight: 'bold', fontSize: '14px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {room.title}
+              </div>
               <div style={{ fontSize: '11px', color: '#ec4899', marginTop: '4px' }}>
                 ● {room.host?.username || room.ownerId?.username || 'Host'}
               </div>
@@ -93,7 +101,7 @@ export default function HomeScreen({ onOpenRoom, activeRoomId }) {
         </div>
       )}
 
-      {/* Floating Purple/Pink Mic Button (Bottom Right) */}
+      {/* Floating Purple/Pink Mic Button */}
       <button
         onClick={handleStartLive}
         disabled={loading}
