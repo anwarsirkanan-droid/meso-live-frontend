@@ -1,3 +1,4 @@
+// src/pages/LiveRoomPage.jsx
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ChevronDown, Crown, Gift, Mic, MicOff, Armchair, Gamepad2,
@@ -11,10 +12,12 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import FloatingPlayer from '../components/FloatingPlayer.jsx';
 import socket from '../socket.js';
 
+
 const ICE_SERVERS = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
 ];
+
 
 export default function LiveRoomPage({
   roomId,
@@ -41,12 +44,15 @@ export default function LiveRoomPage({
   const [giftAnimation, setGiftAnimation] = useState(null);
   const [remoteStreams, setRemoteStreams] = useState({});
 
+
   const localStreamRef = useRef(null);
   const peersRef = useRef(new Map());
   const autoJoinAttemptedRef = useRef(false);
 
+
   const profileId = String(profile?._id || profile?.id || profile?.userId || '');
   const authenticatedUserId = String(user?._id || user?.id || user?.userId || profileId);
+
 
   // 1. Fetch Room, Profile, Gift Catalog
   useEffect(() => {
@@ -63,27 +69,33 @@ export default function LiveRoomPage({
     return () => { active = false; };
   }, [roomId]);
 
+
   // 2. Socket Real-Time Listeners (backend event names)
   useEffect(() => {
     socket.auth = { token: localStorage.getItem('token') || '' };
     if (!socket.connected) socket.connect();
 
+
     socket.on('chat_message', (newMsg) => {
       setMessages((prev) => [...prev, newMsg]);
     });
 
+
     socket.on('notice_update', ({ notice }) => {
       setRoom((prev) => prev ? { ...prev, notice } : prev);
     });
+
 
     socket.on('gift_sent', (giftData) => {
       setGiftAnimation(giftData);
       setTimeout(() => setGiftAnimation(null), 4000);
     });
 
+
     socket.on('mic_mode', ({ mode }) => {
       setMicMode(mode);
     });
+
 
     socket.on('all_mics_closed', () => {
       if (localStreamRef.current) {
@@ -91,6 +103,7 @@ export default function LiveRoomPage({
         setMicEnabled(false);
       }
     });
+
 
     // WebRTC: existing user initiates offer to new joiner
     socket.on('user-joined', async ({ socketId }) => {
@@ -109,6 +122,7 @@ export default function LiveRoomPage({
       await peer.setLocalDescription(offer);
       socket.emit('voice_offer', { target: socketId, offer });
     });
+
 
     socket.on('voice_offer', async ({ socketId, offer }) => {
       if (!localStreamRef.current || socketId === socket.id) return;
@@ -131,10 +145,12 @@ export default function LiveRoomPage({
       socket.emit('voice_answer', { target: socketId, answer });
     });
 
+
     socket.on('voice_answer', async ({ socketId, answer }) => {
       const peer = peersRef.current.get(socketId);
       if (peer) await peer.setRemoteDescription(new RTCSessionDescription(answer));
     });
+
 
     socket.on('ice_candidate', async ({ socketId, candidate }) => {
       const peer = peersRef.current.get(socketId);
@@ -146,6 +162,7 @@ export default function LiveRoomPage({
         }
       }
     });
+
 
     socket.on('user-left', ({ socketId }) => {
       const peer = peersRef.current.get(socketId);
@@ -159,6 +176,7 @@ export default function LiveRoomPage({
         return next;
       });
     });
+
 
     return () => {
       socket.off('chat_message');
@@ -174,6 +192,7 @@ export default function LiveRoomPage({
     };
   }, [roomId]);
 
+
   // 3. Audio Stream & Room Join
   const joinRoomAudio = async () => {
     try {
@@ -185,25 +204,29 @@ export default function LiveRoomPage({
     }
   };
 
+
   useEffect(() => {
     if (!room || !profile || autoJoinAttemptedRef.current) return;
     autoJoinAttemptedRef.current = true;
     void joinRoomAudio();
   }, [room, profile]);
 
+
+  // FIXED: socket.disconnect() haqame — singleton — app guutuu keessatti bade
   const leaveRoom = () => {
     if (socket.connected) socket.emit('leave_room', { roomId });
-    socket.disconnect();
     localStreamRef.current?.getTracks().forEach((track) => track.stop());
     peersRef.current.forEach((peer) => peer.close());
     peersRef.current.clear();
     onClose();
   };
 
+
   // 4. 25 Seats Grid (0–24)
   const roomSeats = useMemo(() => Array.from({ length: 25 }, (_, seatIndex) =>
     room?.seats?.find((seat) => seat.seatIndex === seatIndex) || { seatIndex, userId: null },
   ), [room]);
+
 
   const changeSeat = async (seat) => {
     try {
@@ -219,12 +242,14 @@ export default function LiveRoomPage({
     }
   };
 
+
   // 5. Follow — self-follow blocked
   const handleFollow = () => {
     if (isHost) return;
     setIsFollowed(!isFollowed);
     socket.emit('user_follow', { targetUserId: room?.ownerId?._id, roomId });
   };
+
 
   // 6. Chat — real-time
   const sendChatMessage = (e) => {
@@ -239,6 +264,7 @@ export default function LiveRoomPage({
     setChatDraft('');
   };
 
+
   // 7. Notice — host edit + broadcast
   const handleSaveNotice = async () => {
     try {
@@ -251,6 +277,7 @@ export default function LiveRoomPage({
     }
   };
 
+
   // 8. Mic Mode — host toggle
   const toggleMicMode = () => {
     const nextMode = micMode === 'free' ? 'apply' : 'free';
@@ -258,11 +285,13 @@ export default function LiveRoomPage({
     socket.emit('mic_mode', { roomId, mode: nextMode });
   };
 
+
   // 9. Close All Mics — host only
   const handleCloseAllMics = () => {
     socket.emit('close_all_mics', { roomId });
     setMenuOpen(false);
   };
+
 
   // 10. Password — host set/remove
   const handleSetPassword = async () => {
@@ -276,6 +305,7 @@ export default function LiveRoomPage({
     }
   };
 
+
   // 11. Gift — send + animation via backend broadcast
   const handleSendGift = async (giftId) => {
     try {
@@ -285,6 +315,7 @@ export default function LiveRoomPage({
       console.error('Gift error:', err);
     }
   };
+
 
   if (isMinimized) {
     return (
@@ -298,8 +329,10 @@ export default function LiveRoomPage({
     );
   }
 
+
   const host = room?.ownerId && typeof room.ownerId === 'object' ? room.ownerId : null;
   const isHost = String(host?._id || host?.id || '') === authenticatedUserId;
+
 
   return (
     <main style={{
@@ -310,6 +343,7 @@ export default function LiveRoomPage({
     }}>
       <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 15%, #1e1b4b 0%, #08090e 80%)', zIndex: 0 }} />
 
+
       {/* Gift Animation */}
       {giftAnimation && (
         <div style={{ position: 'absolute', top: '20%', left: '50%', transform: 'translateX(-50%)', backgroundColor: 'rgba(236,72,153,0.9)', padding: '10px 20px', borderRadius: '9999px', zIndex: 100, display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 0 20px #ec4899' }}>
@@ -317,6 +351,7 @@ export default function LiveRoomPage({
           <span style={{ fontWeight: 'bold', fontSize: '12px' }}>{giftAnimation.senderName} sent {giftAnimation.giftName}!</span>
         </div>
       )}
+
 
       {/* Header */}
       <header style={{ position: 'relative', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px' }}>
@@ -348,6 +383,7 @@ export default function LiveRoomPage({
           </button>
         </div>
       </header>
+
 
       {/* 25 Voice Seats Grid */}
       <section style={{ position: 'relative', zIndex: 5, flex: 1, width: '100%', maxWidth: '480px', margin: '0 auto', padding: '8px 12px', overflowY: 'auto' }}>
@@ -395,12 +431,14 @@ export default function LiveRoomPage({
           })}
         </div>
 
+
         {/* System + Announcement + Chat */}
         <div style={{ marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <div style={{ backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', padding: '6px 10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)' }}>
             <span style={{ color: '#f59e0b', fontWeight: 'bold', fontSize: '10px' }}>🔔 System</span>
             <p style={{ color: '#d1d5db', margin: '2px 0 0 0', fontSize: '9px' }}>Please protect your privacy and stay safe.</p>
           </div>
+
 
           <div style={{ backgroundColor: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(8px)', padding: '6px 10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
@@ -414,15 +452,18 @@ export default function LiveRoomPage({
             )}
           </div>
 
+
+          {/* FIXED: msg.id → idx — React key error furame */}
           <div style={{ maxHeight: '75px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '10px' }}>
-            {messages.slice(-5).map((msg) => (
-              <div key={msg.id} style={{ color: '#fff', backgroundColor: 'rgba(0,0,0,0.3)', padding: '4px 8px', borderRadius: '6px', width: 'fit-content' }}>
+            {messages.slice(-5).map((msg, idx) => (
+              <div key={idx} style={{ color: '#fff', backgroundColor: 'rgba(0,0,0,0.3)', padding: '4px 8px', borderRadius: '6px', width: 'fit-content' }}>
                 <span style={{ fontWeight: 'bold', color: '#f472b6' }}>{msg.username}:</span> {msg.text}
               </div>
             ))}
           </div>
         </div>
       </section>
+
 
       {/* Footer Controls */}
       <footer style={{ position: 'relative', zIndex: 10, padding: '8px 12px', backgroundColor: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -443,6 +484,7 @@ export default function LiveRoomPage({
           <Gift size={15} />
         </button>
       </footer>
+
 
       {/* Room Menu Sheet */}
       {menuOpen && (
@@ -476,6 +518,7 @@ export default function LiveRoomPage({
         </div>
       )}
 
+
       {/* Edit Announcement Modal */}
       {announcementModal && (
         <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 99999999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '16px' }}>
@@ -493,6 +536,7 @@ export default function LiveRoomPage({
           </div>
         </div>
       )}
+
 
       {/* Gift Modal */}
       {giftsOpen && (
@@ -514,6 +558,7 @@ export default function LiveRoomPage({
           </div>
         </div>
       )}
+
 
       {/* Password Modal */}
       {passwordModal && (

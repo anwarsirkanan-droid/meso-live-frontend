@@ -1,5 +1,6 @@
 import React from 'react';
-import { Mic, MicOff } from 'lucide-react';
+import { Mic, MicOff, X } from 'lucide-react';
+
 
 export default function FloatingPlayer({
   title = 'Live Room',
@@ -30,6 +31,7 @@ export default function FloatingPlayer({
         animation: 'pulse 2s infinite',
       }}
     >
+      {/* Live indicator */}
       <div
         style={{
           position: 'absolute',
@@ -42,7 +44,61 @@ export default function FloatingPlayer({
           border: '2px solid #0f0f13',
         }}
       />
+
+      {/* Mic icon — center */}
       <span style={{ fontSize: '20px', color: '#fff' }}>🎙️</span>
+
+      {/* NEW: Mic toggle button — bottom left */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleMicrophone();
+        }}
+        title={micEnabled ? 'Mute' : 'Unmute'}
+        style={{
+          position: 'absolute',
+          bottom: '-4px',
+          left: '-4px',
+          width: '22px',
+          height: '22px',
+          borderRadius: '50%',
+          backgroundColor: micEnabled ? '#10b981' : '#ef4444',
+          border: '2px solid #0f0f13',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          padding: 0,
+        }}
+      >
+        {micEnabled ? <Mic size={11} color="#fff" /> : <MicOff size={11} color="#fff" />}
+      </button>
+
+      {/* NEW: Close button — bottom right */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+        title="Leave Room"
+        style={{
+          position: 'absolute',
+          bottom: '-4px',
+          right: '-4px',
+          width: '22px',
+          height: '22px',
+          borderRadius: '50%',
+          backgroundColor: '#ef4444',
+          border: '2px solid #0f0f13',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          padding: 0,
+        }}
+      >
+        <X size={11} color="#fff" />
+      </button>
     </div>
   );
 }
