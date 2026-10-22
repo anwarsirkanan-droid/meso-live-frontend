@@ -192,6 +192,7 @@ export default function HomePage() {
       refreshRooms();
     };
     const onRoomListUpdated = () => refreshRooms();
+    const onActiveRoomsUpdated = () => refreshRooms();
     const onRoomUpdated = (event) => {
       const room = event.detail;
       if (!room?._id) return;
@@ -206,6 +207,7 @@ export default function HomePage() {
 
     roomStatusSocket.on('room-status-changed', onRoomStatusChanged);
     roomStatusSocket.on('room_list_updated', onRoomListUpdated);
+    roomStatusSocket.on('active-rooms-updated', onActiveRoomsUpdated);
     window.addEventListener('mesolive-room-updated', onRoomUpdated);
     window.addEventListener('mesolive-room-status-changed', onLocalRoomStatusChanged);
     setLoading(true);
@@ -221,6 +223,7 @@ export default function HomePage() {
       window.removeEventListener('focus', refreshRooms);
       roomStatusSocket.off('room-status-changed', onRoomStatusChanged);
       roomStatusSocket.off('room_list_updated', onRoomListUpdated);
+      roomStatusSocket.off('active-rooms-updated', onActiveRoomsUpdated);
       window.removeEventListener('mesolive-room-updated', onRoomUpdated);
       window.removeEventListener('mesolive-room-status-changed', onLocalRoomStatusChanged);
       roomStatusSocket.disconnect();
@@ -450,15 +453,6 @@ export default function HomePage() {
         <article className="party-promo party-promo-event"><CalendarDays size={25} aria-hidden="true" /><div><strong>Event</strong><span>Join the next challenge</span></div><b>→</b></article>
       </section>
 
-      <section className="hero-card">
-        <div>
-          <p className="eyebrow">{ownRoomId ? 'YOUR LIVE ROOM IS READY' : 'YOUR NEXT CONVERSATION STARTS HERE'}</p>
-          <h2>{ownRoomId ? <>Your room.<br />Your community.</> : <>Find your people.<br />Join the moment.</>}</h2>
-          <p className="muted">{ownRoomId ? 'Your room stays on Home — go live whenever you are ready.' : 'Drop into a live room and make a new connection.'}</p>
-        </div>
-        <span className="hero-art" aria-hidden="true">🎙️</span>
-      </section>
-
       <div className="section-heading">
         <div><p className="eyebrow">HAPPENING NOW</p><h2>Live rooms</h2></div>
         <span className="live-pill"><i /> LIVE</span>
@@ -485,11 +479,6 @@ export default function HomePage() {
           {displayedRooms.map((room) => renderRoomCard(room, room.isDefaultHostRoom || roomIdOf(room) === ownRoomId))}
         </div>
       )}
-
-      <Card className="feature-card">
-        <div><p className="eyebrow">TAKE A BREAK</p><h2>Try your luck</h2><p className="muted">Play a quick round in a live room.</p></div>
-        <Link className="button button-secondary" to="/games/dice">Open Game Center <span aria-hidden="true">→</span></Link>
-      </Card>
 
       <button
         className="home-go-live-fab"
