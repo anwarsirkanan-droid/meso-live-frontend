@@ -773,24 +773,11 @@ export default function LiveRoomPage({
     reconnecting: 'Reconnecting',
     error: 'Signaling error',
   }[status];
-  const visibleGifts = useMemo(() => {
-    const matchingNames = GIFT_CATEGORY_NAMES[giftCategory];
-    return gifts.filter((gift) => {
-      const category = String(gift.category || gift.type || '').toLowerCase();
-      return category === giftCategory.toLowerCase() ||
-        matchingNames.some((name) => name.toLowerCase() === String(gift.name).toLowerCase());
-    });
-  }, [giftCategory, gifts]);
-  const selectedGift = gifts.find((gift) => gift._id === selectedGiftId);
-  const selectedGiftTotal = Number(selectedGift?.coinPrice || 0) * giftQuantity *
-    (selectedReceiverId === 'all'
-      ? roomSeats.filter((seat) => seat.userId && String(
-          seat.userId?._id || seat.userId?.id || seat.userId,
-        ) !== currentUserId).length
-      : 1);
 
   return (
-    <main className={`live-room-page${isMinimized ? ' is-minimized' : ''}`}>
+    <main className={`live-room-page ${isMinimized ? 'is-minimized' : ''}`}>
+      <div className="live-room-bg-overlay" />
+
       {isMinimized && (
         <FloatingPlayer
           title={room?.title}
@@ -801,323 +788,128 @@ export default function LiveRoomPage({
           onClose={leaveRoom}
         />
       )}
-      <header className="live-room-header">
-        <div className="live-room-heading">
-          <div className="live-room-host-identity">
-            {host?.avatar || host?.profilePicture
-              ? <img className="live-room-host-avatar" src={host.avatar || host.profilePicture} alt="" />
-              : <span className="live-room-host-avatar live-room-host-avatar-fallback">{hostName?.[0]?.toUpperCase() || 'M'}</span>}
-            <div>
-              <p className="eyebrow">{room?.category ? room.category.toUpperCase() : 'LIVE ROOM'}</p>
-              <h1>{room?.title || 'Live room'}</h1>
-              <p className="live-room-id">ROOM ID · {roomId}</p>
-              {hostPublicId && <p className="live-room-id">ID: {hostPublicId}</p>}
-            </div>
+
+      {/* Clean Header */}
+      <header className="flex items-center justify-between p-3 absolute top-0 left-0 w-full z-10">
+        <div className="flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 text-white">
+          {host?.avatar || host?.profilePicture ? (
+            <img className="w-10 h-10 rounded-full border-2 border-yellow-400 object-cover" src={host.avatar || host.profilePicture} alt="" />
+          ) : (
+            <span className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center font-bold text-white">
+              {hostName?.[0]?.toUpperCase() || 'M'}
+            </span>
+          )}
+          <div className="flex flex-col">
+            <span className="text-xs font-bold truncate max-w-[90px]">{hostName || room?.title || 'Live Room'}</span>
+            <span className="text-[10px] text-gray-300">ID: {hostPublicId || roomId.slice(0, 6)}</span>
           </div>
-          <p className="muted live-room-host">
-            {room?.isLive && <span className="live-pill"><i /> LIVE NOW</span>}
-            {hostName && `Hosted by ${hostName}`}
-            <span className={`live-room-connection is-${status}`} role="status">{statusLabel}</span>
-          </p>
+          <button className="bg-pink-500 hover:bg-pink-600 text-white p-1 rounded-full text-xs ml-1" title="Follow">
+            +
+          </button>
         </div>
-        <div className="live-room-header-right">
-          <div className="live-room-stats">
-            <span>👥 {Number(room?.membersCount) || 0} listening</span>
-            <span>🪙 {(Number(room?.totalCoins || room?.coins) || 0).toLocaleString()} room coins</span>
-            <span><Gamepad2 size={15} /> {Number(room?.miniGamesCount) || 0} games</span>
+
+        {/* Top Right Controls */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center bg-black/30 backdrop-blur-md px-2 py-1 rounded-full text-xs text-yellow-400">
+            <span className="mr-1">👥</span>
+            <span>{Number(room?.membersCount) || 1}</span>
           </div>
-          <div className="room-controls live-room-header-controls">
-            {joined ? (
-              <button
-                className="button button-secondary"
-                type="button"
-                onClick={toggleMicrophone}
-                aria-pressed={!micEnabled}
-              >
-                {micEnabled ? 'Mute microphone' : 'Unmute microphone'}
-              </button>
-            ) : (
-              <button
-                className="button button-primary"
-                type="button"
-                onClick={joinRoom}
-                disabled={status === 'requesting-microphone' || status === 'connecting'}
-              >
-                {status === 'requesting-microphone'
-                  ? 'Allow microphone…'
-                  : status === 'connecting'
-                    ? 'Connecting…'
-                    : 'Join voice room'}
-              </button>
-            )}
-            {joined && (
-              <div className="room-mic-meter" aria-label={`Microphone level ${micLevel}%`}>
-                <span style={{ width: `${micLevel}%` }} />
-              </div>
-            )}
-            <button className="button button-secondary" type="button" onClick={shareRoom} aria-label="Share room">
-              <Share2 size={16} /> Share
-            </button>
-            <button className="button button-secondary room-minimize-button" type="button" onClick={onMinimize} aria-label="Minimize room">
-              <ChevronDown size={17} /> Minimize
-            </button>
-            <button className="button button-danger room-close-button" type="button" onClick={leaveRoom} aria-label="Close room">
-              <X size={17} />
-            </button>
-          </div>
+
+          <button onClick={onMinimize} className="p-2 bg-black/40 backdrop-blur-md rounded-full text-gray-300 hover:text-white">
+            <ChevronDown size={16} />
+          </button>
+          <button onClick={leaveRoom} className="p-2 bg-red-500/80 backdrop-blur-md rounded-full text-white hover:bg-red-600">
+            <X size={16} />
+          </button>
         </div>
       </header>
-      {loading && (
-        <div className="rooms-loading" role="status" aria-label="Loading room">
-          <span className="loading-spinner" />
-          <span className="muted">Loading room…</span>
-        </div>
-      )}
 
-      {!loading && error && <div className="notice-error" role="alert">{error}</div>}
-      {!loading && warning && <div className="room-warning" role="status">{warning}</div>}
-      {playbackBlocked && (
-        <button className="button button-secondary room-audio-enable" type="button" onClick={enableRemoteAudio}>
-          Enable incoming audio
+      {/* Voice Seats Grid (Circle Layout) */}
+      <section className="flex-1 w-full max-w-lg mx-auto px-4 pt-20 pb-4 overflow-y-auto z-0">
+        <div className="grid grid-cols-5 gap-y-5 gap-x-2 justify-items-center">
+          {roomSeats.slice(0, 20).map((seat, seatIndex) => {
+            const isHostSeat = seatIndex === 0;
+            const seatedUser = seat.userId && typeof seat.userId === 'object' ? seat.userId : null;
+
+            return (
+              <div
+                key={seatIndex}
+                onClick={() => changeSeat(seat)}
+                className="flex flex-col items-center justify-center relative cursor-pointer group"
+              >
+                <div className={`relative w-12 h-12 rounded-full flex items-center justify-center transition-transform active:scale-95 ${
+                  seatedUser 
+                    ? 'border-2 border-yellow-400 bg-black/60' 
+                    : 'bg-black/30 backdrop-blur-md border border-white/20 hover:border-white/50'
+                }`}>
+                  {seatedUser ? (
+                    <>
+                      <img 
+                        src={seatedUser.avatar || seatedUser.profilePicture || "/default-avatar.png"} 
+                        alt="" 
+                        className="w-full h-full rounded-full object-cover" 
+                      />
+                      <div className="absolute bottom-0 right-0 bg-black/80 p-0.5 rounded-full text-[8px]">
+                        <Mic size={10} className="text-green-400" />
+                      </div>
+                    </>
+                  ) : (
+                    <span className="text-gray-300 text-xs font-semibold">
+                      {isHostSeat ? <Crown className="text-yellow-400" size={14} /> : (seatIndex + 1)}
+                    </span>
+                  )}
+
+                  {isHostSeat && seatedUser && (
+                    <span className="absolute -top-3 text-xs">👑</span>
+                  )}
+                </div>
+
+                <span className="text-[10px] text-white/90 font-medium mt-1 truncate w-14 text-center">
+                  {seatedUser ? (seatedUser.username || 'User') : (isHostSeat ? 'Host' : `${seatIndex + 1}`)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Chat and Announcements */}
+        <div className="mt-6 space-y-2">
+          {announcement && (
+            <div className="bg-black/40 backdrop-blur-md p-2 rounded-xl text-xs text-white border border-white/10">
+              <span className="text-yellow-400 font-bold">Announcement:</span> {announcement}
+            </div>
+          )}
+
+          <div className="max-h-36 overflow-y-auto space-y-1 text-xs bg-black/20 backdrop-blur-sm p-2 rounded-xl">
+            {messages.slice(-5).map((msg) => (
+              <div key={msg.id || Math.random()} className="text-white/90">
+                <span className="font-bold text-pink-400">{msg.username}:</span> {msg.text}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Bottom Control Bar */}
+      <footer className="p-3 bg-black/40 backdrop-blur-md flex items-center gap-2 w-full z-10">
+        <form onSubmit={sendChatMessage} className="flex-1 flex items-center bg-white/10 rounded-full px-3 py-1.5 border border-white/10">
+          <input
+            type="text"
+            placeholder="Say Hello..."
+            value={chatDraft}
+            onChange={(e) => setChatDraft(e.target.value)}
+            className="bg-transparent text-white text-xs w-full focus:outline-none placeholder-gray-400"
+          />
+        </form>
+
+        <button onClick={toggleMicrophone} className="p-2.5 bg-white/10 hover:bg-white/20 rounded-full text-white">
+          {micEnabled ? <Mic size={16} /> : <MicOff size={16} className="text-red-400" />}
         </button>
-      )}
-      <div className="remote-room-audio-list" aria-hidden="true">
-        {remotePeers.map((peer) => (
-          <RemoteAudio key={peer.id} stream={peer.stream} onPlaybackBlocked={handlePlaybackBlocked} />
-        ))}
-      </div>
 
-      {!loading && room && (
-        <div className="live-room-flow">
-          <section className="card room-seats-panel" aria-labelledby="room-seats-title">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">TAKE THE FLOOR</p>
-                <h2 id="room-seats-title">Voice seats</h2>
-              </div>
-              <span className="count-badge">{roomSeats.filter((seat) => seat.userId).length} / 25</span>
-            </div>
-            <p className="muted room-panel-hint">Tap an open seat to join the conversation. Tap your seat to leave it.</p>
-            {roomActionError && <p className="form-error" role="alert">{roomActionError}</p>}
-            <div className="mic-seat-grid">
-              {roomSeats.map((seat) => {
-                const user = seat.userId && typeof seat.userId === 'object' ? seat.userId : null;
-                const seatUserId = String(user?._id || user?.id || seat.userId || '');
-                const occupied = Boolean(seatUserId);
-                const isMine = occupied && seatUserId === currentUserId;
-                const crown = seat.isCrownMic === true || seat.seatIndex < 4;
-                const disabled = roomActionBusy || (occupied && !isMine) || (seat.isLocked && !isMine);
-                const seatLabel = user?.username || (isMine ? 'You' : 'Occupied');
-                return (
-                  <button
-                    className={`mic-seat${occupied ? ' is-occupied' : ''}${isMine ? ' is-mine' : ''}${crown ? ' is-crown' : ''}${seat.isLocked ? ' is-locked' : ''}`}
-                    key={seat.seatIndex}
-                    type="button"
-                    onClick={() => changeSeat(seat)}
-                    disabled={disabled || !currentUserId}
-                    aria-label={`${crown ? 'Crown mic, ' : ''}Mic ${seat.seatIndex + 1}, ${occupied ? seatLabel : seat.isLocked ? 'locked' : 'available'}`}
-                    title={crown ? 'Crown Mic' : `Mic ${seat.seatIndex + 1}`}
-                  >
-                    <span className="mic-seat-icon" aria-hidden="true">{crown ? <Crown size={17} /> : occupied ? '🎙️' : '+'}</span>
-                    <span className="mic-seat-name">{occupied ? seatLabel : `Mic ${seat.seatIndex + 1}`}</span>
-                    {crown && <span className="mic-seat-popularity" aria-label="VIP popular seat">🔥</span>}
-                    {seat.isLocked && <span className="mic-seat-lock" aria-label="Locked">🔒</span>}
-                  </button>
-                );
-              })}
-            </div>
-            {ownSeat && (
-              <p className="muted room-panel-hint">You are on {ownSeat.isCrownMic ? 'the Crown Mic' : `Mic ${ownSeat.seatIndex + 1}`}.</p>
-            )}
-          </section>
-          <section className="room-announcement card">
-            <div className="room-announcement-heading">
-              <div>
-                <p className="eyebrow">ROOM ANNOUNCEMENT</p>
-                {announcementOpen && !editingAnnouncement && (
-                  <p>{announcement || 'Welcome in! Say hello and enjoy the room.'}</p>
-                )}
-              </div>
-              <div className="room-announcement-actions">
-                {isHost && (
-                  <button
-                    className="button button-quiet button-small"
-                    type="button"
-                    onClick={() => {
-                      setAnnouncementDraft(announcement);
-                      setEditingAnnouncement((current) => !current);
-                    }}
-                  >
-                    {editingAnnouncement ? 'Cancel' : 'Edit'}
-                  </button>
-                )}
-                <button
-                  className="button button-quiet button-small"
-                  type="button"
-                  onClick={() => setAnnouncementOpen((current) => !current)}
-                  aria-expanded={announcementOpen}
-                >
-                  {announcementOpen ? 'Collapse' : 'Expand'}
-                </button>
-              </div>
-            </div>
-            {editingAnnouncement && (
-              <form className="room-announcement-form" onSubmit={saveAnnouncement}>
-                <input
-                  aria-label="Room announcement"
-                  maxLength={240}
-                  value={announcementDraft}
-                  onChange={(event) => setAnnouncementDraft(event.target.value)}
-                  placeholder="Share an update with the room"
-                />
-                <button className="button button-primary button-small" type="submit">Save</button>
-              </form>
-            )}
-          </section>
-          <section className="card room-chat-panel" aria-labelledby="room-chat-title">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">REAL-TIME ACTIVITY</p>
-                <h2 id="room-chat-title">Real-time chat</h2>
-              </div>
-              <span className="count-badge">{messages.length} messages</span>
-            </div>
-            <div className="room-chat-feed" role="log" aria-live="polite" aria-relevant="additions">
-              {messages.length === 0 && <p className="muted">Say hello to get the conversation started.</p>}
-              {messages.map((message) => (
-                <p className={message.system ? 'room-chat-message is-system' : 'room-chat-message'} key={message.id}>
-                  <strong>{message.username}</strong>
-                  <span>{message.text.split(/(@[\w.-]+)/g).map((part, index) =>
-                    part.startsWith('@')
-                      ? <strong className="room-chat-mention" key={`${message.id}-${index}`}>{part}</strong>
-                      : part,
-                  )}</span>
-                </p>
-              ))}
-            </div>
-          </section>
-          <div className="room-bottom-controls">
-            <form className="room-bottom-chat" onSubmit={sendChatMessage}>
-              <input
-                aria-label="Say hello in room chat"
-                maxLength={500}
-                placeholder="Say Hello… use @ to mention someone"
-                value={chatDraft}
-                onChange={(event) => setChatDraft(event.target.value)}
-              />
-              <button className="room-emoji-control" type="button" onClick={() => chooseEmoji('😊')} aria-label="Add emoji">😊</button>
-              <button className="button button-primary" type="submit" disabled={!chatDraft.trim()}>Send</button>
-            </form>
-            <button className="room-bottom-control" type="button" onClick={toggleMicrophone} disabled={!joined} aria-label={micEnabled ? 'Mute microphone' : 'Unmute microphone'}>
-              {micEnabled ? <Mic size={18} /> : <MicOff size={18} />}
-              {micEnabled ? 'Mute' : 'Unmute'}
-            </button>
-            <Link className="room-bottom-control" to="/games/dice">
-              <Gamepad2 size={18} /> Games
-            </Link>
-            <button className="room-bottom-control is-gift" type="button" onClick={() => setGiftsOpen(true)}>
-              <Gift size={18} /> Gifts
-            </button>
-          </div>
-          <div className="room-floating-widgets">
-            <button type="button" onClick={() => setGiftFeedback('PK battles are coming soon.')}>⚔️ PK Battle</button>
-            <Link to="/profile">🎁 Daily rewards</Link>
-            <Link to="/profile">🏆 Room ranking</Link>
-          </div>
-        </div>
-      )}
-      {giftsOpen && (
-        <div className="room-modal-overlay" role="presentation" onMouseDown={(event) => {
-          if (event.target === event.currentTarget && !giftBusy) setGiftsOpen(false);
-        }}>
-          <aside className="card room-gifts-panel room-gift-modal" aria-labelledby="room-gifts-title" role="dialog" aria-modal="true">
-            <div className="section-heading">
-              <div>
-                <p className="eyebrow">GIFT STORE · COMBO</p>
-                <h2 id="room-gifts-title">Send a gift</h2>
-              </div>
-              <button className="button button-quiet button-small" type="button" onClick={() => setGiftsOpen(false)} disabled={giftBusy} aria-label="Close gift store">
-                <X size={17} />
-              </button>
-            </div>
-            <span className="count-badge">{(Number(profile?.coins) || 0).toLocaleString()} coins available</span>
-            {giftError && <p className="form-error" role="alert">{giftError}</p>}
-            {giftFeedback && <p className="success-message" role="status">{giftFeedback}</p>}
-            <label className="field room-gift-recipient">
-              <span>Recipient</span>
-              <select value={selectedReceiverId} onChange={(event) => setSelectedReceiverId(event.target.value)}>
-                <option value="all">All occupied mic seats</option>
-                {giftRecipients.map((recipient) => (
-                  <option key={recipient.id} value={recipient.id}>{recipient.name}</option>
-                ))}
-              </select>
-            </label>
-            <div className="room-gift-categories" role="tablist" aria-label="Gift categories">
-              {GIFT_CATEGORIES.map((category) => (
-                <button
-                  className={giftCategory === category ? 'is-active' : ''}
-                  key={category}
-                  type="button"
-                  role="tab"
-                  aria-selected={giftCategory === category}
-                  onClick={() => setGiftCategory(category)}
-                >
-                  {category}
-                </button>
-              ))}
-            </div>
-            {visibleGifts.length ? (
-              <div className="room-gift-grid">
-                {visibleGifts.map((gift) => (
-                  <button
-                    className={`room-gift-option${selectedGiftId === gift._id ? ' is-selected' : ''}`}
-                    key={gift._id}
-                    type="button"
-                    onClick={() => setSelectedGiftId(gift._id)}
-                    aria-pressed={selectedGiftId === gift._id}
-                  >
-                    <span aria-hidden="true">{gift.icon}</span>
-                    <strong>{gift.name}</strong>
-                    <small>{Number(gift.coinPrice || 0).toLocaleString()} coins</small>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <p className="muted room-panel-hint">
-                {gifts.length ? `No ${giftCategory.toLowerCase()} gifts are in the server catalog.` : 'The server gift catalog is unavailable.'}
-              </p>
-            )}
-            <label className="field room-gift-quantity">
-              <span>Quantity</span>
-              <select value={giftQuantity} onChange={(event) => setGiftQuantity(Number(event.target.value))}>
-                {GIFT_QUANTITIES.map((quantity) => <option key={quantity} value={quantity}>{quantity}</option>)}
-              </select>
-            </label>
-            <p className="room-gift-total">
-              Total: <strong>{selectedGiftTotal.toLocaleString()} coins</strong>
-              {selectedReceiverId === 'all' && <span> · all occupied seats</span>}
-            </p>
-            <button
-              className="button button-primary button-full room-send-gift"
-              type="button"
-              onClick={giftSelectedUser}
-              disabled={giftBusy || !selectedGiftId || !selectedReceiverId}
-            >
-              {giftBusy ? 'Sending gift…' : `Send ${giftQuantity} gift${giftQuantity === 1 ? '' : 's'}`}
-            </button>
-            {giftFeed.length > 0 && (
-              <div className="room-gift-feed" aria-live="polite">
-                <h3>Recent gifts</h3>
-                {giftFeed.map((gift, index) => (
-                  <p key={`${gift.timestamp || ''}-${index}`}>
-                    {gift.giftIcon} {gift.senderName} sent {gift.giftName} to {gift.receiverName}
-                  </p>
-                ))}
-              </div>
-            )}
-          </aside>
-        </div>
-      )}
+        <button onClick={() => setGiftsOpen(true)} className="p-2.5 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full text-white">
+          <Gift size={16} />
+        </button>
+      </footer>
     </main>
   );
 }
