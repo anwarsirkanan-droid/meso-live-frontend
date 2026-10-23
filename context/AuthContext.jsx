@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useState } from 'react';
+import { getProfile } from '../src/api.js';
 
 const OWNED_ROOM_KEY = 'mesoLive.ownedRoom';
 
@@ -125,6 +126,35 @@ function persistUser(nextUser) {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(getStoredUser);
   const [token, setToken] = useState(localStorage.getItem('token') || null);
+  const [sessionChecked, setSessionChecked] = useState(false);
+
+  const validateSession = useCallback(async () => {
+    const storedToken = localStorage.getItem('token');
+    if (!storedToken) {
+      setUser(null);
+      setToken(null);
+      setSessionChecked(true);
+      return false;
+    }
+
+    try {
+      const profile = await getProfile();
+      const nextUser = attachPersistentRoom({ ...profile, isHost: profile?.isHost ?? true });
+      setUser(persistUser(nextUser));
+      setToken(storedToken);
+      setSessionChecked(true);
+      return true;
+    } catch {
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('mesoLive.activeRoomId');
+      localStorage.removeItem(OWNED_ROOM_KEY);
+      setSessionChecked(true);
+      return false;
+    }
+  }, []);
 
   const login = (userData, userToken) => {
     const nextUser = attachPersistentRoom({ ...(userData || {}), isHost: userData?.isHost ?? true });
@@ -193,17 +223,17 @@ export function AuthProvider({ children }) {
     }));
   }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('mesoLive.activeRoomId');
     localStorage.removeItem(OWNED_ROOM_KEY);
-  };
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, token, login, updateUser, updateRoom, updateRoomStatus, logout }}>
+    <AuthContext.Provider value={{ user, token, login, updateUser, updateRoom, updateRoomStatus, logout, validateSession, sessionChecked }}>
       {children}
     </AuthContext.Provider>
   );

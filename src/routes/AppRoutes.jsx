@@ -1,9 +1,36 @@
-import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import HomeScreen from '../screens/HomeScreen.jsx';
 import LiveRoomPage from '../pages/LiveRoomPage.jsx';
+import Login from '../pages/Login.jsx';
+import ProfilePage from '../pages/ProfilePage.jsx';
+import MessagesPage from '../pages/MessagesPage.jsx';
+import BottomNav from '../components/BottomNav.jsx';
 import TaskCenter from '../components/TaskCenter.jsx';
 import { getActiveRooms, createRoom } from '../api.js';
+import { useAuth } from '../../context/AuthContext.jsx';
+
+function ProtectedHome({ children }) {
+  const { token, validateSession, logout } = useAuth();
+  const [status, setStatus] = useState('checking');
+
+  useEffect(() => {
+    let active = true;
+    if (!token) {
+      logout();
+      setStatus('unauthenticated');
+      return () => { active = false; };
+    }
+    validateSession().then((valid) => {
+      if (active) setStatus(valid ? 'authenticated' : 'unauthenticated');
+    });
+    return () => { active = false; };
+  }, [token, validateSession, logout]);
+
+  if (status === 'checking') return <main className="auth-page" role="status">Checking your session…</main>;
+  if (status !== 'authenticated') return <Navigate to="/login" replace />;
+  return children;
+}
 
 export default function AppRoutes() {
   const [activeRoomId, setActiveRoomId] = useState(null);
@@ -32,7 +59,7 @@ export default function AppRoutes() {
   };
 
   return (
-    <BrowserRouter>
+    <>
       {/* Task Center Modal */}
       {showTaskCenter && (
         <TaskCenter 
@@ -52,17 +79,16 @@ export default function AppRoutes() {
       )}
 
       <Routes>
-        <Route 
-          path="/" 
-          element={
-            <HomeScreen 
-              onOpenRoom={(id) => { setActiveRoomId(id); setIsMinimized(false); }} 
-              onOpenTasks={() => setShowTaskCenter(true)}
-            />
-          } 
-        />
+        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<ProtectedHome><HomeScreen
+          onOpenRoom={(id) => { setActiveRoomId(id); setIsMinimized(false); }}
+          onOpenTasks={() => setShowTaskCenter(true)}
+        /></ProtectedHome>} />
+        <Route path="/profile" element={<ProtectedHome><ProfilePage /></ProtectedHome>} />
+        <Route path="/messages" element={<ProtectedHome><MessagesPage /></ProtectedHome>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </BrowserRouter>
+      <BottomNav />
+    </>
   );
 }

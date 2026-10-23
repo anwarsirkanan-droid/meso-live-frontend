@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import {
   getProfile, getRoom, leaveRoomSeat, sendGift, takeRoomSeat,
-  getGiftCatalog, updateRoomNotice, setRoomPassword,
+  getGiftCatalog, setRoomPassword,
 } from '../api.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import FloatingPlayer from '../components/FloatingPlayer.jsx';
@@ -240,7 +240,6 @@ export default function LiveRoomPage({
 
   const handleSaveNotice = async () => {
     try {
-      await updateRoomNotice(roomId, announcementDraft);
       socket.emit('notice_update', { roomId, notice: announcementDraft });
       setRoom((prev) => prev ? { ...prev, notice: announcementDraft } : prev);
       setAnnouncementModal(false);

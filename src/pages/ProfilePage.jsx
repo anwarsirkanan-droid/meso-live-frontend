@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getProfile, getWallet } from '../api.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 import GridMenu from '../components/GridMenu.jsx';
 import ListMenu from '../components/ListMenu.jsx';
 import ProfileHeader from '../components/ProfileHeader.jsx';
@@ -7,6 +9,8 @@ import WalletCards from '../components/WalletCards.jsx';
 import { Loading, Page } from '../components/UI.jsx';
 
 export default function ProfilePage() {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [wallet, setWallet] = useState(null);
   const [error, setError] = useState('');
@@ -44,7 +48,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <Page title="My profile" eyebrow="YOUR MESO LIVE ACCOUNT">
+    <Page title="My profile" eyebrow="YOUR MESO LIVE ACCOUNT" actions={<button className="button button-secondary" type="button" onClick={() => { logout(); navigate('/login', { replace: true }); }}>Log out</button>}>
       {error ? <p className="form-error" role="alert">{error}</p> : !profile ? <Loading>Loading profile…</Loading> : (
         <>
           <ProfileHeader profile={profile} onCopy={copyUserId} />

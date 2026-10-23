@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { login } from '../api.js';
 import GoogleAuthButton from '../components/GoogleAuthButton.jsx';
 import { ErrorMessage, Field } from '../components/UI.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 export default function Login() {
   const [method, setMethod] = useState('');
@@ -12,12 +13,12 @@ export default function Login() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
+  const { login: saveSession } = useAuth();
 
   const finishLogin = (data) => {
     const token = data?.token || data?.accessToken;
     if (!token) throw new Error('The server did not return an authentication token.');
-    localStorage.setItem('token', token);
-    if (data?.user) localStorage.setItem('user', JSON.stringify(data.user));
+    saveSession(data?.user, token);
     navigate(data?.user?.profileComplete ? '/' : '/profile-setup', { replace: true });
   };
 
@@ -103,7 +104,10 @@ export default function Login() {
           <div className="login-methods">
             <div className="login-google">
               <GoogleAuthButton
-                onSuccess={(data) => navigate(data?.user?.profileComplete ? '/' : '/profile-setup', { replace: true })}
+                onSuccess={(data) => {
+                  saveSession(data?.user, data?.token || data?.accessToken);
+                  navigate(data?.user?.profileComplete ? '/' : '/profile-setup', { replace: true });
+                }}
                 onError={setError}
                 onLoading={setBusy}
               />
