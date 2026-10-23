@@ -5,11 +5,22 @@ import { AuthProvider } from './context/AuthContext';
 // Pages
 import HomePage from './pages/HomePage';
 import Login from './pages/Login';
-import ChatPage from './pages/ChatPage'; // Ykn Chat
-import ProfilePage from './pages/ProfilePage'; // Ykn Profile
-
-// Components (yoo Navigation Bar addatti qabaatte)
-import BottomNavigation from './components/BottomNavigation'; 
+import Register from './pages/Register';
+import MessagesPage from './pages/MessagesPage';
+import ProfilePage from './pages/ProfilePage';
+import ProfileSetup from './pages/ProfileSetup';
+import ProfileUtilityPages from './pages/ProfileUtilityPages';
+import LiveRoomPage from './pages/LiveRoomPage';
+import AdminDashboard from './pages/AdminDashboard';
+import AgencyCenterPage from './pages/AgencyCenterPage';
+import AgencyDashboardScreen from './pages/AgencyDashboardScreen';
+import DiceGamePage from './pages/DiceGamePage';
+import FaceVerifyPage from './pages/FaceVerifyPage';
+import HostWalletPage from './pages/HostWalletPage';
+import InvitePage from './pages/InvitePage';
+import LevelDetailsPage from './pages/LevelDetailsPage';
+import RechargePage from './pages/RechargePage';
+import SettingsPage from './pages/SettingsPage';
 
 function App() {
   return (
@@ -18,12 +29,24 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/chat" element={<ChatPage />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/messages" element={<MessagesPage />} />
+          <Route path="/chat" element={<MessagesPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile-setup" element={<ProfileSetup />} />
+          <Route path="/profile-utility" element={<ProfileUtilityPages />} />
+          <Route path="/room/:id" element={<LiveRoomPage />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/agency" element={<AgencyCenterPage />} />
+          <Route path="/agency-dashboard" element={<AgencyDashboardScreen />} />
+          <Route path="/dice-game" element={<DiceGamePage />} />
+          <Route path="/face-verify" element={<FaceVerifyPage />} />
+          <Route path="/wallet" element={<HostWalletPage />} />
+          <Route path="/invite" element={<InvitePage />} />
+          <Route path="/level" element={<LevelDetailsPage />} />
+          <Route path="/recharge" element={<RechargePage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Routes>
-        
-        {/* Navigation Bar kan jala irra jiru yoo jiraate */}
-        <BottomNavigation />
       </Router>
     </AuthProvider>
   );
