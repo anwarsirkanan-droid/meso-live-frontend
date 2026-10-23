@@ -1,12 +1,19 @@
 import React from 'react';
-import { BrowserRouter as Router } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext'; // Path sirrii ta'e!
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+
+// Pages
+import HomePage from './pages/HomePage';
+import Login from './pages/Login';
 
 function App() {
   return (
     <AuthProvider>
       <Router>
-        {/* Route fooyya'aani fi components kee as keessa jiru */}
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<Login />} />
+        </Routes>
       </Router>
     </AuthProvider>
   );
