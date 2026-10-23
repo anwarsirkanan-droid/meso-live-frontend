@@ -5,6 +5,26 @@ import LiveRoomPage from '../pages/LiveRoomPage.jsx';
 import Login from '../pages/Login.jsx';
 import ProfilePage from '../pages/ProfilePage.jsx';
 import MessagesPage from '../pages/MessagesPage.jsx';
+import ProfileSetup from '../pages/ProfileSetup.jsx';
+import SettingsPage from '../pages/SettingsPage.jsx';
+import RechargePage from '../pages/RechargePage.jsx';
+import HostWalletPage from '../pages/HostWalletPage.jsx';
+import LevelDetailsPage from '../pages/LevelDetailsPage.jsx';
+import TaskCenterScreen from '../screens/TaskCenterScreen.jsx';
+import HostCenterScreen from '../screens/HostCenterScreen.jsx';
+import AgencyCenterScreen from '../screens/AgencyCenterScreen.jsx';
+import DiceGamePage from '../pages/DiceGamePage.jsx';
+import FaceVerifyPage from '../pages/FaceVerifyPage.jsx';
+import ProfileDetailsScreen from '../screens/ProfileDetailsScreen.jsx';
+import {
+  FollowersPage,
+  FollowingPage,
+  EditProfilePage,
+  MyStreamsPage,
+  GiftHistoryPage,
+  InvitePageView,
+  WithdrawalPage,
+} from '../pages/ProfileUtilityPages.jsx';
 import BottomNav from '../components/BottomNav.jsx';
 import TaskCenter from '../components/TaskCenter.jsx';
 import { getActiveRooms, createRoom } from '../api.js';
@@ -85,7 +105,25 @@ export default function AppRoutes() {
           onOpenTasks={() => setShowTaskCenter(true)}
         /></ProtectedHome>} />
         <Route path="/profile" element={<ProtectedHome><ProfilePage /></ProtectedHome>} />
+        <Route path="/profile/edit" element={<ProtectedHome><EditProfilePage /></ProtectedHome>} />
+        <Route path="/profile/followers" element={<ProtectedHome><FollowersPage /></ProtectedHome>} />
+        <Route path="/profile/following" element={<ProtectedHome><FollowingPage /></ProtectedHome>} />
+        <Route path="/profile/streams" element={<ProtectedHome><MyStreamsPage /></ProtectedHome>} />
+        <Route path="/profile/gifts" element={<ProtectedHome><GiftHistoryPage /></ProtectedHome>} />
+        <Route path="/profile/invite" element={<ProtectedHome><InvitePageView /></ProtectedHome>} />
+        <Route path="/profile/withdrawal" element={<ProtectedHome><WithdrawalPage /></ProtectedHome>} />
+        <Route path="/profile/recharge" element={<ProtectedHome><RechargePage /></ProtectedHome>} />
+        <Route path="/profile/wallet" element={<ProtectedHome><HostWalletPage /></ProtectedHome>} />
+        <Route path="/profile/levels" element={<ProtectedHome><LevelDetailsPage /></ProtectedHome>} />
+        <Route path="/profile/agency" element={<ProtectedHome><AgencyCenterScreen /></ProtectedHome>} />
+        <Route path="/profile/:userId" element={<ProtectedHome><ProfileDetailsScreen /></ProtectedHome>} />
         <Route path="/messages" element={<ProtectedHome><MessagesPage /></ProtectedHome>} />
+        <Route path="/tasks" element={<ProtectedHome><TaskCenterScreen /></ProtectedHome>} />
+        <Route path="/host-center" element={<ProtectedHome><HostCenterScreen /></ProtectedHome>} />
+        <Route path="/games/dice" element={<ProtectedHome><DiceGamePage /></ProtectedHome>} />
+        <Route path="/face-verify" element={<ProtectedHome><FaceVerifyPage /></ProtectedHome>} />
+        <Route path="/profile-setup" element={<ProtectedHome><ProfileSetup /></ProtectedHome>} />
+        <Route path="/settings" element={<ProtectedHome><SettingsPage /></ProtectedHome>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <BottomNav />

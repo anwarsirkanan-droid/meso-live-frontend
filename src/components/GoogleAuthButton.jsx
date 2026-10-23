@@ -1,14 +1,10 @@
 import { GoogleLogin } from '@react-oauth/google';
 import { googleLogin } from '../api.js';
+import { useAuth } from '../../context/AuthContext.jsx';
 
-function saveSession(data) {
-  const token = data?.token || data?.accessToken;
-  if (!token) throw new Error('Google sign-in succeeded but the server did not return a token.');
-  localStorage.setItem('token', token);
-  if (data?.user) localStorage.setItem('user', JSON.stringify(data.user));
-}
+function GoogleAuthButton({ onSuccess, onError, onLoading }) {
+  const { login: saveSession } = useAuth();
 
-export default function GoogleAuthButton({ onSuccess, onError, onLoading }) {
   const handleSuccess = async ({ credential }) => {
     if (!credential) {
       onError('Google did not provide a credential. Please try again.');
@@ -17,7 +13,9 @@ export default function GoogleAuthButton({ onSuccess, onError, onLoading }) {
     onLoading(true);
     try {
       const data = await googleLogin(credential);
-      saveSession(data);
+      const token = data?.token || data?.accessToken;
+      if (!token) throw new Error('Google sign-in succeeded but the server did not return a token.');
+      saveSession(data?.user, token);
       onSuccess(data);
     } catch (error) {
       onError(error.response?.data?.message || error.response?.data?.error || error.message);
@@ -40,3 +38,5 @@ export default function GoogleAuthButton({ onSuccess, onError, onLoading }) {
     </div>
   );
 }
+
+export default GoogleAuthButton;

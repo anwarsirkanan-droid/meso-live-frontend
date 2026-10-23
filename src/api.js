@@ -21,6 +21,7 @@ export const setRoomPassword = async (roomId, password) => {
   return response.data;
 };
 export const login = (credentials) => API.post('/auth/login', credentials).then(dataFrom);
+export const logout = () => API.post('/auth/logout').then(dataFrom);
 export const register = (details) => API.post('/auth/register', details).then(dataFrom);
 export const googleLogin = (credential) =>
   API.post('/auth/google', { credential }).then(dataFrom);
@@ -89,8 +90,8 @@ export const generateInvite = () => API.post('/invite/generate').then(dataFrom);
 export const acceptInvite = (code) => API.post('/invite/accept', { code }).then(dataFrom);
 export const getWalletBalance = () => API.get('/wallet/balance').then(dataFrom);
 export const requestWithdraw = (request) => API.post('/withdraw/request', request).then(dataFrom);
-export const getWallet = () => API.get('/wallet/me').then(dataFrom);
-export const getLevels = () => API.get('/level/me').then(dataFrom);
+export const getWallet = () => API.get('/wallet/balance').then(dataFrom);
+export const getLevels = () => API.get('/leaderboard/level').then(dataFrom);
 export const getMyRoom = () => API.get('/room/my-room').then(dataFrom);
 export const updateProfile = (profile) => API.put('/users/profile', profile).then(dataFrom);
 export const getFollowers = () => API.get('/users/followers').then(dataFrom);

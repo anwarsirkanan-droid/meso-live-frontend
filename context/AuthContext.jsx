@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useState } from 'react';
-import { getProfile } from '../src/api.js';
+import { getProfile, logout as logoutApi } from '../src/api.js';
 
 const OWNED_ROOM_KEY = 'mesoLive.ownedRoom';
 
@@ -224,6 +224,10 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = useCallback(() => {
+    const storedToken = localStorage.getItem('token');
+    if (storedToken) {
+      logoutApi().catch(() => {});
+    }
     setUser(null);
     setToken(null);
     localStorage.removeItem('token');

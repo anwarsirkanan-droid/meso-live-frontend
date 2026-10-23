@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { login, register } from '../api.js';
 import GoogleAuthButton from '../components/GoogleAuthButton.jsx';
 import { ErrorMessage, Field } from '../components/UI.jsx';
+import { useAuth } from '../../context/AuthContext.jsx';
 
 export default function Register() {
   const [username, setUsername] = useState('');
@@ -11,12 +12,12 @@ export default function Register() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const navigate = useNavigate();
+  const { login: saveSession } = useAuth();
 
   const saveToken = (data) => {
     const token = data?.token || data?.accessToken;
     if (!token) return false;
-    localStorage.setItem('token', token);
-    if (data?.user) localStorage.setItem('user', JSON.stringify(data.user));
+    saveSession(data?.user, token);
     return true;
   };
 
