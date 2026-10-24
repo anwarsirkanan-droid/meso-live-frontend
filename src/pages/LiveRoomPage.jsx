@@ -101,7 +101,7 @@ export default function LiveRoomPage({
       peersRef.current.set(socketId, peer);
       localStreamRef.current.getTracks().forEach((track) => peer.addTrack(track, localStreamRef.current));
       peer.onicecandidate = (e) => {
-        if (e.candidate) socket.emit('ice_candidate', { target: socketId, candidate: e.candidate });
+        if (e.candidate) socket.emit('ice-candidate', { roomId, target: socketId, candidate: e.candidate });
       };
       peer.ontrack = (event) => {
         const [remoteStream] = event.streams;
@@ -109,10 +109,10 @@ export default function LiveRoomPage({
       };
       const offer = await peer.createOffer();
       await peer.setLocalDescription(offer);
-      socket.emit('voice_offer', { target: socketId, offer });
+      socket.emit('offer', { roomId, target: socketId, offer });
     });
 
-    socket.on('voice_offer', async ({ socketId, offer }) => {
+    socket.on('offer', async ({ socketId, offer }) => {
       if (!localStreamRef.current || socketId === socket.id) return;
       let peer = peersRef.current.get(socketId);
       if (!peer) {
@@ -120,7 +120,7 @@ export default function LiveRoomPage({
         peersRef.current.set(socketId, peer);
         localStreamRef.current.getTracks().forEach((track) => peer.addTrack(track, localStreamRef.current));
         peer.onicecandidate = (e) => {
-          if (e.candidate) socket.emit('ice_candidate', { target: socketId, candidate: e.candidate });
+          if (e.candidate) socket.emit('ice-candidate', { roomId, target: socketId, candidate: e.candidate });
         };
         peer.ontrack = (event) => {
           const [remoteStream] = event.streams;
@@ -130,15 +130,15 @@ export default function LiveRoomPage({
       await peer.setRemoteDescription(new RTCSessionDescription(offer));
       const answer = await peer.createAnswer();
       await peer.setLocalDescription(answer);
-      socket.emit('voice_answer', { target: socketId, answer });
+      socket.emit('answer', { roomId, target: socketId, answer });
     });
 
-    socket.on('voice_answer', async ({ socketId, answer }) => {
+    socket.on('answer', async ({ socketId, answer }) => {
       const peer = peersRef.current.get(socketId);
       if (peer) await peer.setRemoteDescription(new RTCSessionDescription(answer));
     });
 
-    socket.on('ice_candidate', async ({ socketId, candidate }) => {
+    socket.on('ice-candidate', async ({ socketId, candidate }) => {
       const peer = peersRef.current.get(socketId);
       if (peer && candidate) {
         try {
@@ -169,9 +169,9 @@ export default function LiveRoomPage({
       socket.off('mic_mode');
       socket.off('all_mics_closed');
       socket.off('user-joined');
-      socket.off('voice_offer');
-      socket.off('voice_answer');
-      socket.off('ice_candidate');
+      socket.off('offer');
+      socket.off('answer');
+      socket.off('ice-candidate');
       socket.off('user-left');
     };
   }, [roomId]);
@@ -497,6 +497,19 @@ export default function LiveRoomPage({
           </div>
         </div>
       )}
+      {Object.entries(remoteStreams).map(([socketId, stream]) => (
+        <audio
+          key={socketId}
+          autoPlay
+          playsInline
+          ref={(el) => {
+            if (el && el.srcObject !== stream) {
+              el.srcObject = stream;
+            }
+          }}
+          style={{ display: 'none' }}
+        />
+      ))}
     </main>
   );
 }
