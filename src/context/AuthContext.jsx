@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useState } from 'react';
-import { getProfile, logout as logoutApi } from '../src/api.js';
+import { getProfile, logout as logoutApi } from '../api.js';
 
 const OWNED_ROOM_KEY = 'mesoLive.ownedRoom';
 

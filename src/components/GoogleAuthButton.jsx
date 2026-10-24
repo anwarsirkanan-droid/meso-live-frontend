@@ -1,6 +1,6 @@
 import { GoogleLogin } from '@react-oauth/google';
 import { googleLogin } from '../api.js';
-import { useAuth } from '../../context/AuthContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 
 function GoogleAuthButton({ onSuccess, onError, onLoading }) {
   const { login: saveSession } = useAuth();

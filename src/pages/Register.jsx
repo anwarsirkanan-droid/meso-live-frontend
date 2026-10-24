@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { login, register } from '../api.js';
 import GoogleAuthButton from '../components/GoogleAuthButton.jsx';
 import { ErrorMessage, Field } from '../components/UI.jsx';
-import { useAuth } from '../../context/AuthContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 
 export default function Register() {
   const [username, setUsername] = useState('');

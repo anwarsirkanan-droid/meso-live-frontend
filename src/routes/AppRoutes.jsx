@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import HomeScreen from '../screens/HomeScreen.jsx';
 import LiveRoomPage from '../pages/LiveRoomPage.jsx';
 import Login from '../pages/Login.jsx';
+import Register from '../pages/Register.jsx';
 import ProfilePage from '../pages/ProfilePage.jsx';
 import MessagesPage from '../pages/MessagesPage.jsx';
 import ProfileSetup from '../pages/ProfileSetup.jsx';
@@ -28,7 +29,7 @@ import {
 import BottomNav from '../components/BottomNav.jsx';
 import TaskCenter from '../components/TaskCenter.jsx';
 import { getActiveRooms, createRoom } from '../api.js';
-import { useAuth } from '../../context/AuthContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 
 function ProtectedHome({ children }) {
   const { token, validateSession, logout } = useAuth();
@@ -100,6 +101,7 @@ export default function AppRoutes() {
 
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/" element={<ProtectedHome><HomeScreen
           onOpenRoom={(id) => { setActiveRoomId(id); setIsMinimized(false); }}
           onOpenTasks={() => setShowTaskCenter(true)}

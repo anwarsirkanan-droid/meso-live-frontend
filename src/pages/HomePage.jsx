@@ -5,7 +5,7 @@ import { io } from 'socket.io-client';
 import { createRoom, getRoom, getRooms, globalSearch } from '../api.js';
 import { Card, Page } from '../components/UI.jsx';
 import { API_URL } from '../config.js';
-import { useAuth } from '../../context/AuthContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const COUNTRY_FLAGS = {
   Australia: '🇦🇺',

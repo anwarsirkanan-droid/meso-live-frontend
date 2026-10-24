@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getProfile, getWallet } from '../api.js';
-import { useAuth } from '../../context/AuthContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 import GridMenu from '../components/GridMenu.jsx';
 import ListMenu from '../components/ListMenu.jsx';
 import ProfileHeader from '../components/ProfileHeader.jsx';

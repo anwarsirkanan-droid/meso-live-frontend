@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Copy, ExternalLink, RefreshCw } from 'lucide-react';
 import { applyForAgency, applyForAgencyExit, applyForSubAgency, getAgencyCenter, getAgencyCommission, getAgencyInviteLinks } from '../api.js';
 import { Card, Loading, Page } from '../components/UI.jsx';
-import { useAuth } from '../../context/AuthContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const number = (value) => (Number(value) || 0).toLocaleString();
 const percent = (value) => `${(Number(value || 0) * 100).toFixed(0)}%`;

@@ -8,7 +8,7 @@ import {
   getProfile, getRoom, leaveRoomSeat, sendGift, takeRoomSeat,
   getGiftCatalog, setRoomPassword,
 } from '../api.js';
-import { useAuth } from '../../context/AuthContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 import FloatingPlayer from '../components/FloatingPlayer.jsx';
 import LiveRoomHeader from '../components/LiveRoomHeader.jsx';
 import socket from '../socket.js';

@@ -4,7 +4,7 @@ import { changePassword, getProfile, linkGoogleAccount, updateAccountDetails } f
 import ThemeToggle from '../components/ThemeToggle.jsx';
 import { GoogleLogin } from '@react-oauth/google';
 import { Card, ErrorMessage, Page } from '../components/UI.jsx';
-import { useAuth } from '../../context/AuthContext.jsx';
+import { useAuth } from '../context/AuthContext.jsx';
 
 const readJson = (key, fallback) => {
   try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); } catch { return fallback; }
